@@ -147,6 +147,12 @@ public class ServerChaton {
 
     }
 
+	private record Client(String login) {
+		private boolean checkIsLogin(String login) {
+			return this.login.equals(login);
+		}
+	}
+	
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
 

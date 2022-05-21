@@ -68,7 +68,6 @@ public class StringReader implements Reader<String> {
 
     }
 
-
     private void extractString(ByteBuffer buffer) {
         if(!state.equals(State.WAITING)) {
             return;
@@ -85,10 +84,8 @@ public class StringReader implements Reader<String> {
 
     @Override
     public String get() {
-        if (state != State.DONE) {
+        if (state != State.DONE)
             throw new IllegalStateException();
-        }
-
         return value;
     }
 
