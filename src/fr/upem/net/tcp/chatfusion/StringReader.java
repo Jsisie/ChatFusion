@@ -7,9 +7,7 @@ import java.util.function.Predicate;
 
 public class StringReader implements Reader<String> {
 
-    private enum State {
-        DONE, WAITING, ERROR, SIZE
-    };
+    private enum State { DONE, WAITING, ERROR, SIZE }
 
     private State state = State.SIZE;
     private final int BUFFER_SIZE = 1024;

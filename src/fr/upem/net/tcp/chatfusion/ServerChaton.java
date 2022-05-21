@@ -42,7 +42,8 @@ public class ServerChaton {
             for (; ; ) {
                 int opcode = bufferIn.getInt();
                 switch (opcode) {
-                    case (0 | 1) -> Connection();
+                    case (0 | 1) -> connection();
+                    case (4) -> publicMessage();
                 }
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
@@ -66,10 +67,25 @@ public class ServerChaton {
             }
         }
 
+        private void publicMessage() {
+            Reader.ProcessStatus status = stringReader.process(bufferIn);
+            switch (status) {
+                case DONE -> {
+                    // code
+                }
+                case REFILL -> logger.info("REFILL");
+
+                case ERROR -> {
+                    logger.info("ERROR");
+                    silentlyClose();
+                }
+            }
+        }
+
         /**
          *
          */
-        public void Connection() {
+        public void connection() {
             Reader.ProcessStatus status = stringReader.process(bufferIn);
             switch (status) {
                 case DONE -> {
@@ -83,8 +99,8 @@ public class ServerChaton {
                         }
                     } else {
                         Client client = new Client(login);
-                        Clients.add(client);
-                        ConnectionAccepted(login);
+                        clients.add(client);
+                        connectionAccepted(login);
                     }
                     msgReader.reset();
                 }
@@ -100,7 +116,7 @@ public class ServerChaton {
         /**
          * @param login String
          */
-        private void ConnectionAccepted(String login) {
+        private void connectionAccepted(String login) {
             var bb = StandardCharsets.UTF_8.encode(login);
             if (bufferOut.remaining() >= Integer.BYTES + bb.limit()) {
                 bufferOut.putInt(2);
@@ -133,7 +149,6 @@ public class ServerChaton {
                 var login = fullMsg.login();
                 var msg = fullMsg.message();
                 bufferOut.putInt(login.length()).put(cs.encode(login)).putInt(msg.length()).put(cs.encode(msg));
-
             }
         }
 
@@ -199,8 +214,12 @@ public class ServerChaton {
 
     }
 
+    /**
+     * @param login String
+     * @return boolean
+     */
     private boolean IsConnect(String login) {
-        for (var client : Clients) {
+        for (var client : clients) {
             if (client.checkIsLogin(login))
                 return true;
         }
@@ -213,10 +232,9 @@ public class ServerChaton {
         }
     }
 
-    private final List<Client> Clients = new ArrayList<>();
+    private final List<Client> clients = new ArrayList<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
-
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
 
@@ -229,7 +247,6 @@ public class ServerChaton {
         selector = Selector.open();
         this.name = name;
     }
-
 
     public void launch() throws IOException {
         serverSocketChannel.configureBlocking(false);
