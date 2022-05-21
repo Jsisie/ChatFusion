@@ -1,5 +1,7 @@
 package fr.upem.net.tcp.chatfusion;
 
+import java.nio.charset.StandardCharsets;
+
 public record Message (String login, String message){
 
     /**
@@ -10,7 +12,7 @@ public record Message (String login, String message){
      *  - login name (String) : n bytes
      * @return int
      */
-    public int getSize() {
-        return login.length() + message.length() + Integer.BYTES * 2;
+    public int Size(){
+        return StandardCharsets.UTF_8.encode(login).limit() + StandardCharsets.UTF_8.encode(message).limit() + 8;
     }
 }
