@@ -5,11 +5,11 @@ import java.nio.charset.StandardCharsets;
 public record Message (String login, String message){
 
     /**
-     * Get size of a message composed of :
-     *  - length of the message (int) : 4 bytes
-     *  - message (String) : n bytes
-     *  - length of the login name (int) : 4 bytes
-     *  - login name (String) : n bytes
+     * Get size of a message composed of : <br>
+     *  - length of the message (int) : 4 bytes <br>
+     *  - message (String) : n bytes <br>
+     *  - length of the login name (int) : 4 bytes <br>
+     *  - login name (String) : n bytes <br>
      * @return int
      */
     public int Size(){

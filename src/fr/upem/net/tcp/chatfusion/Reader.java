@@ -3,13 +3,12 @@ package fr.upem.net.tcp.chatfusion;
 import java.nio.ByteBuffer;
 
 public interface Reader<T> {
+    enum ProcessStatus {DONE, REFILL, ERROR}
 
-    public static enum ProcessStatus { DONE, REFILL, ERROR };
+    ProcessStatus process(ByteBuffer bb);
 
-    public ProcessStatus process(ByteBuffer bb);
+    T get();
 
-    public T get();
-
-    public void reset();
-
+    void reset();
 }
+
