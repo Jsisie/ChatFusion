@@ -65,7 +65,6 @@ public class StringReader implements Reader<String> {
        } else if(intState.equals(ProcessStatus.ERROR)) {
             state = State.ERROR;
         }
-
     }
 
     private void extractString(ByteBuffer buffer) {

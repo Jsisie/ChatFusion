@@ -34,47 +34,48 @@ public class ServerChaton {
         }
 
         /**
-         * Process the content of bufferIn
-         * <p>
-         * The convention is that bufferIn is in write-mode before the call to process and
-         * after the call
+         * Process the content of bufferIn. <br>
+         * The convention is that bufferIn is in write-mode
+         * before the call to process and after the call
          */
         private void processIn() {
             for (; ; ) {
                 int opcode = bufferIn.getInt();
                 switch (opcode) {
-                    case (0 | 1):
-                        Connection();
+                    case (0 | 1) -> Connection();
                 }
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
-                    case DONE:
+                    case DONE -> {
                         logger.info("DONE");
                         var value = msgReader.get();
                         logger.info(value.toString());
                         server.broadcast(value);
                         msgReader.reset();
-                        break;
-                    case REFILL:
+                    }
+                    case REFILL -> {
                         logger.info("REFILL");
                         return;
-
-                    case ERROR:
+                    }
+                    case ERROR -> {
                         logger.info("ERROR");
                         silentlyClose();
                         return;
+                    }
                 }
             }
         }
 
+        /**
+         *
+         */
         public void Connection() {
             Reader.ProcessStatus status = stringReader.process(bufferIn);
             switch (status) {
-                case DONE:
+                case DONE -> {
                     logger.info("DONE");
                     var login = stringReader.get();
                     logger.info(login);
-
                     if (IsConnect(login)) {
                         if (bufferOut.remaining() >= Integer.BYTES) {
                             bufferOut.putInt(3);
@@ -85,21 +86,20 @@ public class ServerChaton {
                         Clients.add(client);
                         ConnectionAccepted(login);
                     }
-
-
                     msgReader.reset();
-                    break;
-                case REFILL:
-                    logger.info("REFILL");
-                    return;
+                }
+                case REFILL -> logger.info("REFILL");
 
-                case ERROR:
+                case ERROR -> {
                     logger.info("ERROR");
                     silentlyClose();
-                    return;
+                }
             }
         }
 
+        /**
+         * @param login String
+         */
         private void ConnectionAccepted(String login) {
             var bb = StandardCharsets.UTF_8.encode(login);
             if (bufferOut.remaining() >= Integer.BYTES + bb.limit()) {
@@ -112,7 +112,7 @@ public class ServerChaton {
         /**
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          *
-         * @param msg
+         * @param msg Message
          */
         public void queueMessage(Message msg) {
             queue.add(msg);
@@ -128,6 +128,8 @@ public class ServerChaton {
             var previewMsg = queue.peek();
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()/*previewMsg.login().length() + previewMsg.message().length() + 2 * Integer.BYTES*/) {
                 var fullMsg = queue.poll();
+                if (fullMsg == null)
+                    return;
                 var login = fullMsg.login();
                 var msg = fullMsg.message();
                 bufferOut.putInt(login.length()).put(cs.encode(login)).putInt(msg.length()).put(cs.encode(msg));
@@ -137,11 +139,10 @@ public class ServerChaton {
 
         /**
          * Update the interestOps of the key looking only at values of the boolean
-         * closed and of both ByteBuffers.
-         * <p>
+         * closed and of both ByteBuffers. <br>
          * The convention is that both buffers are in write-mode before the call to
-         * updateInterestOps and after the call. Also it is assumed that process has
-         * been be called just before updateInterestOps.
+         * updateInterestOps and after the call. <br>
+         * It is assumed that process has been called just before updateInterestOps.
          */
         private void updateInterestOps() {
             var newInterestOps = 0;
@@ -171,7 +172,7 @@ public class ServerChaton {
          * The convention is that both buffers are in write-mode before the call to
          * doRead and after the call
          *
-         * @throws IOException
+         * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
             if (sc.read(bufferIn) == -1)
@@ -186,7 +187,7 @@ public class ServerChaton {
          * The convention is that both buffers are in write-mode before the call to
          * doWrite and after the call
          *
-         * @throws IOException
+         * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while writing in it
          */
         private void doWrite() throws IOException {
             bufferOut.flip();
@@ -212,7 +213,7 @@ public class ServerChaton {
         }
     }
 
-    private List<Client> Clients = new ArrayList<>();
+    private final List<Client> Clients = new ArrayList<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
 
@@ -291,7 +292,7 @@ public class ServerChaton {
     /**
      * Add a message to all connected clients queue
      *
-     * @param msg
+     * @param msg Message
      */
     private void broadcast(Message msg) {
         var keys = selector.keys();
