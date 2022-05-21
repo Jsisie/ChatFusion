@@ -1,5 +1,6 @@
 package fr.upem.net.tcp.chatfusion;
 
+import javax.naming.Context;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -27,6 +28,8 @@ public class ServerChaton {
         // give access to ServerChatInt.this
         private boolean closed = false;
 
+        Reader.ProcessStatus status;
+
         private Context(ServerChaton server, SelectionKey key) {
             this.key = key;
             this.sc = (SocketChannel) key.channel();
@@ -40,77 +43,57 @@ public class ServerChaton {
          */
         private void processIn() {
             for (; ; ) {
-                int opcode = bufferIn.getInt();
-                switch (opcode) {
-                    case (0 | 1) -> connection();
-                    case (4) -> publicMessage();
-                }
-                Reader.ProcessStatus status = msgReader.process(bufferIn);
+                status = msgReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
-                        logger.info("DONE");
-                        var value = msgReader.get();
-                        logger.info(value.toString());
-                        server.broadcast(value);
-                        msgReader.reset();
+                        int opcode = bufferIn.getInt();
+                        switch (opcode) {
+                            case (0 | 1) -> connection();
+                            case (4) -> publicMessage();
+                        }
                     }
-                    case REFILL -> {
-                        logger.info("REFILL");
-                        return;
-                    }
+                    case REFILL -> logger.info("REFILL");
+
                     case ERROR -> {
                         logger.info("ERROR");
                         silentlyClose();
-                        return;
                     }
                 }
+
             }
         }
 
         private void publicMessage() {
-            Reader.ProcessStatus status = stringReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    // code
-                }
-                case REFILL -> logger.info("REFILL");
+            logger.info("DONE");
+            var value = msgReader.get();
+            logger.info(value.toString());
+            server.broadcast(value);
+            msgReader.reset();
 
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
-                }
-            }
+            // send buffer to all connected clients
+
+            //
+
         }
 
         /**
          *
          */
         public void connection() {
-            Reader.ProcessStatus status = stringReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    logger.info("DONE");
-                    var login = stringReader.get();
-                    logger.info(login);
-                    if (IsConnect(login)) {
-                        if (bufferOut.remaining() >= Integer.BYTES) {
-                            bufferOut.putInt(3);
-                            updateInterestOps();
-                        }
-                    } else {
-                        Client client = new Client(login);
-                        clients.add(client);
-                        connectionAccepted(login);
-                    }
-                    msgReader.reset();
+            logger.info("DONE");
+            var login = stringReader.get();
+            logger.info(login);
+            if (IsConnect(login)) {
+                if (bufferOut.remaining() >= Integer.BYTES) {
+                    bufferOut.putInt(3);
+                    updateInterestOps();
                 }
-                case REFILL -> logger.info("REFILL");
-
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
-                }
+            } else {
+                Client client = new Client(login);
+                clients.add(client);
+                connectionAccepted(login);
             }
+            msgReader.reset();
         }
 
         /**
@@ -144,8 +127,7 @@ public class ServerChaton {
             var previewMsg = queue.peek();
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()/*previewMsg.login().length() + previewMsg.message().length() + 2 * Integer.BYTES*/) {
                 var fullMsg = queue.poll();
-                if (fullMsg == null)
-                    return;
+                if (fullMsg == null) return;
                 var login = fullMsg.login();
                 var msg = fullMsg.message();
                 bufferOut.putInt(login.length()).put(cs.encode(login)).putInt(msg.length()).put(cs.encode(msg));
@@ -161,16 +143,12 @@ public class ServerChaton {
          */
         private void updateInterestOps() {
             var newInterestOps = 0;
-            if (bufferIn.hasRemaining() && !closed)
-                newInterestOps = newInterestOps | SelectionKey.OP_READ;
+            if (bufferIn.hasRemaining() && !closed) newInterestOps = newInterestOps | SelectionKey.OP_READ;
 
-            if (bufferOut.position() != 0)
-                newInterestOps = newInterestOps | SelectionKey.OP_WRITE;
+            if (bufferOut.position() != 0) newInterestOps = newInterestOps | SelectionKey.OP_WRITE;
 
-            if (newInterestOps == 0)
-                silentlyClose();
-            else
-                key.interestOps(newInterestOps);
+            if (newInterestOps == 0) silentlyClose();
+            else key.interestOps(newInterestOps);
         }
 
         private void silentlyClose() {
@@ -190,8 +168,7 @@ public class ServerChaton {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
-            if (sc.read(bufferIn) == -1)
-                closed = true;
+            if (sc.read(bufferIn) == -1) closed = true;
             processIn();
             updateInterestOps();
         }
@@ -220,8 +197,7 @@ public class ServerChaton {
      */
     private boolean IsConnect(String login) {
         for (var client : clients) {
-            if (client.checkIsLogin(login))
-                return true;
+            if (client.checkIsLogin(login)) return true;
         }
         return false;
     }
@@ -230,6 +206,7 @@ public class ServerChaton {
         private boolean checkIsLogin(String login) {
             return this.login.equals(login);
         }
+
     }
 
     private final List<Client> clients = new ArrayList<>();
