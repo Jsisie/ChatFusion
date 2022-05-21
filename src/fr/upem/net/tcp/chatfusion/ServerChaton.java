@@ -6,7 +6,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +22,7 @@ public class ServerChaton {
         private final ArrayDeque<Message> queue = new ArrayDeque<>();
         private Charset cs = Charset.forName("UTF-8");
         private MessageReader msgReader = new MessageReader();
+        private StringReader stringReader = new StringReader();
         private final ServerChaton server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
@@ -37,6 +41,11 @@ public class ServerChaton {
          */
         private void processIn() {
             for (; ; ) {
+                int opcode = bufferIn.getInt();
+                switch (opcode) {
+                    case (0 | 1):
+                        Connection();
+                }
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
                     case DONE:
@@ -58,6 +67,48 @@ public class ServerChaton {
             }
         }
 
+        public void Connection() {
+            Reader.ProcessStatus status = stringReader.process(bufferIn);
+            switch (status) {
+                case DONE:
+                    logger.info("DONE");
+                    var login = stringReader.get();
+                    logger.info(login);
+
+                    if (IsConnect(login)) {
+                        if (bufferOut.remaining() >= Integer.BYTES) {
+                            bufferOut.putInt(3);
+                            updateInterestOps();
+                        }
+                    } else {
+                        Client client = new Client(login);
+                        Clients.add(client);
+                        ConnectionAccepted(login);
+                    }
+
+
+                    msgReader.reset();
+                    break;
+                case REFILL:
+                    logger.info("REFILL");
+                    return;
+
+                case ERROR:
+                    logger.info("ERROR");
+                    silentlyClose();
+                    return;
+            }
+        }
+
+        private void ConnectionAccepted(String login) {
+            var bb = StandardCharsets.UTF_8.encode(login);
+            if (bufferOut.remaining() >= Integer.BYTES + bb.limit()) {
+                bufferOut.putInt(2);
+                bufferOut.put(bb);
+                updateInterestOps();
+            }
+        }
+
         /**
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          *
@@ -75,7 +126,7 @@ public class ServerChaton {
          */
         private void processOut() {
             var previewMsg = queue.peek();
-            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.login().length() + previewMsg.message().length() + 2 * Integer.BYTES) {
+            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()/*previewMsg.login().length() + previewMsg.message().length() + 2 * Integer.BYTES*/) {
                 var fullMsg = queue.poll();
                 var login = fullMsg.login();
                 var msg = fullMsg.message();
@@ -147,23 +198,37 @@ public class ServerChaton {
 
     }
 
-	private record Client(String login) {
-		private boolean checkIsLogin(String login) {
-			return this.login.equals(login);
-		}
-	}
-	
+    private boolean IsConnect(String login) {
+        for (var client : Clients) {
+            if (client.checkIsLogin(login))
+                return true;
+        }
+        return false;
+    }
+
+    private record Client(String login) {
+        private boolean checkIsLogin(String login) {
+            return this.login.equals(login);
+        }
+    }
+
+    private List<Client> Clients = new ArrayList<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
 
-    public ServerChaton(int port) throws IOException {
+    private ServerSocketChannel leader;
+    private String name;
+
+    public ServerChaton(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(new InetSocketAddress(port));
         selector = Selector.open();
+        this.name = name;
     }
+
 
     public void launch() throws IOException {
         serverSocketChannel.configureBlocking(false);
@@ -239,11 +304,11 @@ public class ServerChaton {
     }
 
     public static void main(String[] args) throws NumberFormatException, IOException {
-        if (args.length != 1) {
+        if (args.length != 2) {
             usage();
             return;
         }
-        new ServerChaton(Integer.parseInt(args[0])).launch();
+        new ServerChaton(Integer.parseInt(args[0]), args[1]).launch();
     }
 
     private static void usage() {
