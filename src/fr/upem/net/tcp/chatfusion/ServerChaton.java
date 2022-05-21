@@ -6,7 +6,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
+import java.sql.Array;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,12 +155,12 @@ public class ServerChaton {
 			return this.login.equals(login);
 		}
 	}
-	
+
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
-
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
+	private final List connectedClients = new ArrayList<Client>();
 
     public ServerChaton(int port) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
