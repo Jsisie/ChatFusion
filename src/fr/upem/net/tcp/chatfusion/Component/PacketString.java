@@ -6,11 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
-public class packetString implements Packet {
+public class PacketString implements Packet {
     private final int opCode;
     private final List<String> components;
 
-    public packetString(int opCode, List<String> list) {
+    public PacketString(int opCode, List<String> list) {
         this.opCode = opCode;
         this.components = list;
     }
