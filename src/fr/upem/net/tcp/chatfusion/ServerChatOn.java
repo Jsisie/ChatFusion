@@ -1,9 +1,9 @@
 package fr.upem.net.tcp.chatfusion;
 
-import javax.naming.Context;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
@@ -14,23 +14,23 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerChaton {
+public class ServerChatOn {
     private class Context {
         private final SelectionKey key;
         private final SocketChannel sc;
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
         private final ArrayDeque<Message> queue = new ArrayDeque<>();
-        private Charset cs = Charset.forName("UTF-8");
+        private Charset cs = StandardCharsets.UTF_8;
         private MessageReader msgReader = new MessageReader();
         private StringReader stringReader = new StringReader();
-        private final ServerChaton server; // we could also have Context as an instance class, which would naturally
+        private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
 
         Reader.ProcessStatus status;
 
-        private Context(ServerChaton server, SelectionKey key) {
+        private Context(ServerChatOn server, SelectionKey key) {
             this.key = key;
             this.sc = (SocketChannel) key.channel();
             this.server = server;
@@ -46,10 +46,11 @@ public class ServerChaton {
                 status = msgReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
+                        logger.info("DONE");
                         int opcode = bufferIn.getInt();
                         switch (opcode) {
-                            case (0 | 1) -> connection();
-                            case (4) -> publicMessage();
+                            case 0, 1 -> connection();
+                            case 4 -> publicMessage();
                         }
                     }
                     case REFILL -> logger.info("REFILL");
@@ -59,21 +60,39 @@ public class ServerChaton {
                         silentlyClose();
                     }
                 }
-
             }
         }
 
+        /**
+         *
+         */
         private void publicMessage() {
-            logger.info("DONE");
+            // send buffer to all connected clients
             var value = msgReader.get();
             logger.info(value.toString());
             server.broadcast(value);
+
+            // Test if server == leader
+            if (leader == serverSocketChannel) {
+                // Yes, send to connected server
+                for (var server : connectedServer) {
+                    try {
+                        server.accept().write(bufferIn);
+                    } catch (IOException e) {
+                        logger.severe("The connection with the server " + server + " has suddenly stopped");
+                        return;
+                    }
+                }
+            } else {
+                // No, send to leader
+                try {
+                    leader.accept().write(bufferIn);
+                } catch (IOException e) {
+                    logger.severe("The connection with the server " + leader + " has suddenly stopped");
+                    return;
+                }
+            }
             msgReader.reset();
-
-            // send buffer to all connected clients
-
-            //
-
         }
 
         /**
@@ -89,8 +108,7 @@ public class ServerChaton {
                     updateInterestOps();
                 }
             } else {
-                Client client = new Client(login);
-                clients.add(client);
+                connectedClients.add(new Client(login));
                 connectionAccepted(login);
             }
             msgReader.reset();
@@ -100,7 +118,7 @@ public class ServerChaton {
          * @param login String
          */
         private void connectionAccepted(String login) {
-            var bb = StandardCharsets.UTF_8.encode(login);
+            var bb = cs.encode(login);
             if (bufferOut.remaining() >= Integer.BYTES + bb.limit()) {
                 bufferOut.putInt(2);
                 bufferOut.put(bb);
@@ -196,7 +214,7 @@ public class ServerChaton {
      * @return boolean
      */
     private boolean IsConnect(String login) {
-        for (var client : clients) {
+        for (var client : connectedClients) {
             if (client.checkIsLogin(login)) return true;
         }
         return false;
@@ -209,20 +227,22 @@ public class ServerChaton {
 
     }
 
-    private final List<Client> clients = new ArrayList<>();
+    private final List<Client> connectedClients = new ArrayList<>();
+    private final List<ServerSocketChannel> connectedServer = new ArrayList<>();
     private static final int BUFFER_SIZE = 1_024;
-    private static final Logger logger = Logger.getLogger(ServerChaton.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-
     private ServerSocketChannel leader;
     private String name;
 
-    public ServerChaton(int port, String name) throws IOException {
+    public ServerChatOn(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(new InetSocketAddress(port));
         selector = Selector.open();
         this.name = name;
+        // initialize by default the leader being the server itself
+        this.leader = this.serverSocketChannel;
     }
 
     public void launch() throws IOException {
@@ -303,7 +323,7 @@ public class ServerChaton {
             usage();
             return;
         }
-        new ServerChaton(Integer.parseInt(args[0]), args[1]).launch();
+        new ServerChatOn(Integer.parseInt(args[0]), args[1]).launch();
     }
 
     private static void usage() {
