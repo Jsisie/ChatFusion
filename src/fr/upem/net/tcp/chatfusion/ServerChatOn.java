@@ -1,11 +1,10 @@
 package fr.upem.net.tcp.chatfusion;
 
 import fr.upem.net.tcp.chatfusion.Packet.Message;
-import fr.upem.net.tcp.chatfusion.Reader.*;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
+import fr.upem.net.tcp.chatfusion.Reader.*;
 
-import javax.naming.Context;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -13,7 +12,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,23 +50,12 @@ public class ServerChatOn {
          */
         private void processIn() {
             for (; ; ) {
-                status = msgReader.process(bufferIn);
-                switch (status) {
-                    case DONE -> {
-                        logger.info("DONE");
-                        int opcode = bufferIn.getInt();
-                        switch (opcode) {
-                            case 0, 1 -> connection();
-                            case 4 -> publicMessage();
-                            case 8 -> initFusion();
-                        }
-                    }
-                    case REFILL -> logger.info("REFILL");
-
-                    case ERROR -> {
-                        logger.info("ERROR");
-                        silentlyClose();
-                    }
+                logger.info("DONE");
+                int opcode = bufferIn.getInt();
+                switch (opcode) {
+                    case 0, 1 -> connection();
+                    case 4 -> publicMessage();
+                    case 8 -> initFusion();
                 }
             }
         }
@@ -73,23 +64,22 @@ public class ServerChatOn {
          *
          */
         private void initFusion() {
-            // check if a merge is being made
-
-
-            // Test if server == leader
-            if (leader == null) {
-                // get the list of connected server to the request server
-                List<ServerSocketChannel> requestServers = null;
-                // Yes, test if both server have a common server
-                if(hasServerInCommon(requestServers)) { // TODO - replace 'null' with a list of all server from the request server
-                    // send packet (9)
-                } else {
-                    // send packet (10)
-                }
-            } else {
-                // send packet (11)
-            }
-
+//            // check if a merge is being made
+//
+//
+//            // Test if server == leader
+//            if (leader == null) {
+//                // get the list of connected server to the request server
+//                List<ServerSocketChannel> requestServers = null;
+//                // Yes, test if both server have a common server
+//                if(hasServerInCommon(requestServers)) { // TODO - replace 'null' with a list of all server from the request server
+//                    // send packet (9)
+//                } else {
+//                    // send packet (10)
+//                }
+//            } else {
+//                // send packet (11)
+//            }
         }
 
         private List<ServerSocketChannel> getServerListFromBuffer() {
@@ -99,45 +89,55 @@ public class ServerChatOn {
             return requestServers;
         }
 
-        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
-            for(var serv : requestServers)
-                if(connectedServer.contains(serv))
-                    return true;
-            return false;
-        }
+//        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
+//            for(var serv : requestServers)
+//                if(connectedServer.contains(serv))
+//                    return true;
+//            return false;
+//        }
 
         /**
          *
          */
         private void publicMessage() {
-            // send buffer to all connected clients
-            var packet = publicMessageReader.get();
-            var nameServer = packet.components().get(0);
-            var login =  packet.components().get(1);
-            var message = packet.components().get(2);
-            Message msg = new Message(login,message);
-            if (nameServer.equals(name)){
-                if (IsConnect(login)){
-                    broadcast(msg);
-                }
-            }
-            else{
-                // Test if server == leader
-                if (leader == null) {
-                    // Yes, send to connected server
-                    connectedServer.forEach((key, value) ->{
-                        if (!key.equals(name)){
-                            value.queueMessage(packet);
+            status = publicMessageReader.process(bufferIn);
+            switch (status) {
+                case DONE -> {
+                    // send buffer to all connected clients
+                    var packet = publicMessageReader.get();
+                    var nameServer = packet.components().get(0);
+                    var login = packet.components().get(1);
+                    var message = packet.components().get(2);
+                    Message msg = new Message(login, message);
+                    if (nameServer.equals(name)) {
+                        if (IsConnect(login)) {
+                            broadcast(msg);
                         }
-                    });
+                    } else {
+                        // Test if server == leader
+                        if (leader == null) {
+                            // Yes, send to connected server
+                            connectedServer.forEach((key, value) -> {
+                                if (!key.equals(name)) {
+                                    value.queueMessage(packet);
+                                }
+                            });
 
-                } else {
-                    // No, send to leader
-                    leader.queueMessage(packet);
+                        } else {
+                            // No, send to leader
+                            leader.queueMessage(packet);
+                        }
+                    }
+                    logger.info(packet.components().toString());
+                    publicMessageReader.reset();
+                }
+                case REFILL -> logger.info("REFILL");
+
+                case ERROR -> {
+                    logger.info("ERROR");
+                    silentlyClose();
                 }
             }
-            logger.info(packet.components().toString());
-            publicMessageReader.reset();
         }
 
         /**
@@ -269,7 +269,7 @@ public class ServerChatOn {
     }
 
     private final List<Client> connectedClients = new ArrayList<>();
-    private final HashMap<String , Context> connectedServer = new HashMap<>();
+    private final HashMap<String, Context> connectedServer = new HashMap<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
     private final ServerSocketChannel serverSocketChannel;
