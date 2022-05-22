@@ -7,7 +7,6 @@ import java.util.*;
 
 public class ConnectReader implements Reader<PacketString> {
     private enum State {DONE, WAITING, ERROR}
-
     private ConnectReader.State state = ConnectReader.State.WAITING;
     private PacketString packet;
     private String login = "";

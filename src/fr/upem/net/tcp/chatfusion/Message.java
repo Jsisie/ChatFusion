@@ -1,8 +1,11 @@
 package fr.upem.net.tcp.chatfusion;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 public record Message(String login, String message) {
+
+    private static final Charset cs = StandardCharsets.UTF_8;
 
     /**
      * Get size of a message composed of : <br>
@@ -14,6 +17,6 @@ public record Message(String login, String message) {
      * @return int
      */
     public int getSize() {
-        return StandardCharsets.UTF_8.encode(login).limit() + StandardCharsets.UTF_8.encode(message).limit() + Integer.BYTES * 2;
+        return cs.encode(login).limit() + cs.encode(message).limit() + Integer.BYTES * 2;
     }
 }
