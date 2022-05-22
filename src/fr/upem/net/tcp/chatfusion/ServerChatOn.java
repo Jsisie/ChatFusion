@@ -1,9 +1,7 @@
 package fr.upem.net.tcp.chatfusion;
 
-import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
-import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
-import fr.upem.net.tcp.chatfusion.Reader.Reader;
-import fr.upem.net.tcp.chatfusion.Reader.StringReader;
+import fr.upem.net.tcp.chatfusion.Packet.Message;
+import fr.upem.net.tcp.chatfusion.Reader.*;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 
@@ -15,9 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +28,7 @@ public class ServerChatOn {
         private final MessageReader msgReader = new MessageReader();
         private final StringReader stringReader = new StringReader();
         private final ConnectReader connectReader = new ConnectReader();
+        private final PublicMessageReader publicMessageReader = new PublicMessageReader();
         private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
@@ -80,7 +77,7 @@ public class ServerChatOn {
 
 
             // Test if server == leader
-            if (leader == serverSocketChannel) {
+            if (leader == null) {
                 // get the list of connected server to the request server
                 List<ServerSocketChannel> requestServers = null;
                 // Yes, test if both server have a common server
@@ -114,33 +111,33 @@ public class ServerChatOn {
          */
         private void publicMessage() {
             // send buffer to all connected clients
-            var value = msgReader.get();
-            logger.info(value.toString());
-            server.broadcast(value);
-
-            // Test if server == leader
-            if (leader == serverSocketChannel) {
-                // Yes, send to connected server
-                for (var ssc : connectedServer) {
-                    try {
-                        var sc = ssc.accept();
-                        if (sc != null) sc.write(bufferIn);
-                    } catch (IOException e) {
-                        logger.warning("The connection with the server " + ssc + " has suddenly stopped");
-                        return;
-                    }
-                }
-            } else {
-                // No, send to leader
-                try {
-                    var sc = leader.accept();
-                    if (sc != null) sc.write(bufferIn);
-                } catch (IOException e) {
-                    logger.warning("The connection with the server " + leader + " has suddenly stopped");
-                    return;
+            var packet = publicMessageReader.get();
+            var nameServer = packet.components().get(0);
+            var login =  packet.components().get(1);
+            var message = packet.components().get(2);
+            Message msg = new Message(login,message);
+            if (nameServer.equals(name)){
+                if (IsConnect(login)){
+                    broadcast(msg);
                 }
             }
-            msgReader.reset();
+            else{
+                // Test if server == leader
+                if (leader == null) {
+                    // Yes, send to connected server
+                    connectedServer.forEach((key, value) ->{
+                        if (!key.equals(name)){
+                            value.queueMessage(packet);
+                        }
+                    });
+
+                } else {
+                    // No, send to leader
+                    leader.queueMessage(packet);
+                }
+            }
+            logger.info(packet.components().toString());
+            publicMessageReader.reset();
         }
 
         /**
@@ -158,7 +155,7 @@ public class ServerChatOn {
                 connectedClients.add(new Client(login));
                 connectionAccepted(login);
             }
-            msgReader.reset();
+            connectReader.reset();
         }
 
         /**
@@ -166,7 +163,7 @@ public class ServerChatOn {
          */
         private void connectionAccepted(String login) {
             var list = new ArrayList<String>();
-            list.add(name);
+            list.add(login);
             var packetAccepted = new PacketString(2, list);
             queueMessage(packetAccepted);
         }
@@ -272,12 +269,12 @@ public class ServerChatOn {
     }
 
     private final List<Client> connectedClients = new ArrayList<>();
-    private final List<ServerSocketChannel> connectedServer = new ArrayList<>();
+    private final HashMap<String , Context> connectedServer = new HashMap<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final ServerSocketChannel leader;
+    private final Context leader;
     private final String name;
 
     public ServerChatOn(int port, String name) throws IOException {
@@ -288,7 +285,7 @@ public class ServerChatOn {
         selector = Selector.open();
         this.name = name;
         // initialize by default the leader being the server itself
-        this.leader = this.serverSocketChannel;
+        this.leader = null;
     }
 
     public void launch() throws IOException {
@@ -352,15 +349,15 @@ public class ServerChatOn {
     /**
      * Add a message to all connected clients queue
      *
-     * @param msg Message
+     * @param packet Message
      */
-    private void broadcast(Message msg) {
+    private void broadcast(Packet packet) {
         var keys = selector.keys();
         for (var key : keys) {
             var attach = key.attachment();
             if (attach == null) continue;
             var context = (Context) attach;
-            context.queueMessage(msg);
+            context.queueMessage(packet);
         }
     }
 
