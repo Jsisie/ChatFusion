@@ -51,6 +51,7 @@ public class ServerChatOn {
                         switch (opcode) {
                             case 0, 1 -> connection();
                             case 4 -> publicMessage();
+                            case 8 -> initFusion();
                         }
                     }
                     case REFILL -> logger.info("REFILL");
@@ -66,6 +67,12 @@ public class ServerChatOn {
         /**
          *
          */
+        private void initFusion() {
+        }
+
+        /**
+         *
+         */
         private void publicMessage() {
             // send buffer to all connected clients
             var value = msgReader.get();
@@ -75,11 +82,13 @@ public class ServerChatOn {
             // Test if server == leader
             if (leader == serverSocketChannel) {
                 // Yes, send to connected server
-                for (var server : connectedServer) {
+                for (var ssc : connectedServer) {
                     try {
-                        server.accept().write(bufferIn);
+                        var sc = ssc.accept();
+                        if(sc != null)
+                            sc.write(bufferIn);
                     } catch (IOException e) {
-                        logger.severe("The connection with the server " + server + " has suddenly stopped");
+                        logger.warning("The connection with the server " + ssc + " has suddenly stopped");
                         return;
                     }
                 }
@@ -88,7 +97,7 @@ public class ServerChatOn {
                 try {
                     leader.accept().write(bufferIn);
                 } catch (IOException e) {
-                    logger.severe("The connection with the server " + leader + " has suddenly stopped");
+                    logger.warning("The connection with the server " + leader + " has suddenly stopped");
                     return;
                 }
             }
@@ -215,7 +224,8 @@ public class ServerChatOn {
      */
     private boolean IsConnect(String login) {
         for (var client : connectedClients) {
-            if (client.checkIsLogin(login)) return true;
+            if (client.checkIsLogin(login))
+                return true;
         }
         return false;
     }
@@ -239,6 +249,8 @@ public class ServerChatOn {
     public ServerChatOn(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(new InetSocketAddress(port));
+        // switch server to non-blocking mode
+        serverSocketChannel.configureBlocking(false);
         selector = Selector.open();
         this.name = name;
         // initialize by default the leader being the server itself
