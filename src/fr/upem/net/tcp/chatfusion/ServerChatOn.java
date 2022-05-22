@@ -1,5 +1,6 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Packet.PacketOpcode;
 import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
@@ -7,7 +8,6 @@ import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 
-import javax.naming.Context;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -28,6 +28,7 @@ public class ServerChatOn {
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
+
         private final Charset cs = StandardCharsets.UTF_8;
         private final MessageReader msgReader = new MessageReader();
         private final StringReader stringReader = new StringReader();
@@ -88,6 +89,8 @@ public class ServerChatOn {
                     // send packet (9)
                 } else {
                     // send packet (10)
+                    var packet = new PacketOpcode(bufferIn.getInt());
+                    queueMessage(packet);
                 }
             } else {
                 // send packet (11)
