@@ -5,7 +5,7 @@ import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
 import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 import fr.upem.net.tcp.chatfusion.Component.Packet;
-import fr.upem.net.tcp.chatfusion.Component.packetString;
+import fr.upem.net.tcp.chatfusion.Component.PacketString;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -121,7 +121,7 @@ public class ServerChatOn {
             var login = packet.components().get(0);
             logger.info(login);
             if (IsConnect(login)) {
-                var packetRefusal = new packetString(3, new ArrayList<String>());
+                var packetRefusal = new PacketString(3, new ArrayList<>());
                 queueMessage(packetRefusal);
             } else {
                 connectedClients.add(new Client(login));
@@ -136,7 +136,7 @@ public class ServerChatOn {
         private void connectionAccepted(String login) {
             var list = new ArrayList<String>();
             list.add(name);
-            var packetAccepted = new packetString(2, list);
+            var packetAccepted = new PacketString(2, list);
             queueMessage(packetAccepted);
         }
 
@@ -246,8 +246,8 @@ public class ServerChatOn {
     private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private ServerSocketChannel leader;
-    private String name;
+    private final ServerSocketChannel leader;
+    private final String name;
 
     public ServerChatOn(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
@@ -310,7 +310,7 @@ public class ServerChatOn {
     }
 
     private void silentlyClose(SelectionKey key) {
-        Channel sc = (Channel) key.channel();
+        Channel sc = key.channel();
         try {
             sc.close();
         } catch (IOException e) {
