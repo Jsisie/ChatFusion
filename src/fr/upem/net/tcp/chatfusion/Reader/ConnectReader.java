@@ -1,17 +1,15 @@
 package fr.upem.net.tcp.chatfusion.Reader;
 
-import fr.upem.net.tcp.chatfusion.Message;
-import fr.upem.net.tcp.chatfusion.trame.Trame;
-import fr.upem.net.tcp.chatfusion.trame.TrameString;
+import fr.upem.net.tcp.chatfusion.Component.packetString;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 
-public class ConnectReader implements Reader<TrameString> {
+public class ConnectReader implements Reader<packetString> {
     private enum State {DONE, WAITING, ERROR}
 
     private ConnectReader.State state = ConnectReader.State.WAITING;
-    private TrameString trame;
+    private packetString packet;
     private String login = "";
     private final StringReader stringReader = new StringReader();
 
@@ -40,16 +38,16 @@ public class ConnectReader implements Reader<TrameString> {
         state = ConnectReader.State.DONE;
         var list = new ArrayList<String>();
         list.add(login);
-        trame = new TrameString(0, list);
+        packet = new packetString(0, list);
         return ProcessStatus.DONE;
     }
 
     @Override
-    public TrameString get() {
+    public packetString get() {
         if (state != ConnectReader.State.DONE) {
             throw new IllegalStateException();
         }
-        return trame;
+        return packet;
     }
 
     public void reset() {
