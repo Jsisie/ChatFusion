@@ -75,6 +75,7 @@ public class ServerChatOn {
          *
          */
         private void initFusion() {
+
         }
 
         /**
@@ -102,7 +103,9 @@ public class ServerChatOn {
             } else {
                 // No, send to leader
                 try {
-                    leader.accept().write(bufferIn);
+                    var sc = leader.accept();
+                    if(sc != null)
+                        sc.write(bufferIn);
                 } catch (IOException e) {
                     logger.warning("The connection with the server " + leader + " has suddenly stopped");
                     return;
