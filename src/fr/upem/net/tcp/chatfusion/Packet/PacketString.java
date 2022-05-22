@@ -1,4 +1,4 @@
-package fr.upem.net.tcp.chatfusion.Component;
+package fr.upem.net.tcp.chatfusion.Packet;
 
 
 import java.nio.ByteBuffer;
