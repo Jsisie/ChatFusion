@@ -4,8 +4,8 @@ import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
 import fr.upem.net.tcp.chatfusion.Reader.StringReader;
-import fr.upem.net.tcp.chatfusion.Component.Packet;
-import fr.upem.net.tcp.chatfusion.Component.PacketString;
+import fr.upem.net.tcp.chatfusion.Packet.Packet;
+import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
