@@ -83,25 +83,25 @@ public class ServerChatOn {
             // Test if server == leader
             if (leader == serverSocketChannel) {
                 // get the list of connected server to the request server
-                List<ServerSocketChannel> requestServers = null;
+                List<ServerSocketChannel> requestServers = getServerListFromBuffer();
                 // Yes, test if both server have a common server
-                if(hasServerInCommon(requestServers)) { // TODO - replace 'null' with a list of all server from the request server
+                if(hasServerInCommon(requestServers)) {
                     // send packet (9)
+
                 } else {
                     // send packet (10)
-                    var packet = new PacketOpcode(bufferIn.getInt());
+                    var packet = new PacketOpcode(10);
                     queueMessage(packet);
                 }
             } else {
                 // send packet (11)
-            }
 
+            }
         }
 
         private List<ServerSocketChannel> getServerListFromBuffer() {
             var requestServers = new ArrayList<ServerSocketChannel>();
-
-            // process here the list from the buffer
+            // TODO - process here the list from the buffer
             return requestServers;
         }
 
@@ -155,7 +155,7 @@ public class ServerChatOn {
             var login = packet.components().get(0);
             logger.info(login);
             if (IsConnect(login)) {
-                var packetRefusal = new PacketString(3, new ArrayList<>());
+                var packetRefusal = new PacketOpcode(3);
                 queueMessage(packetRefusal);
             } else {
                 connectedClients.add(new Client(login));
