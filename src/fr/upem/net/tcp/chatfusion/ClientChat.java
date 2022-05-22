@@ -1,5 +1,6 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Packet.Message;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
 
