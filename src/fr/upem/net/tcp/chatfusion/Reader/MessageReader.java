@@ -46,7 +46,6 @@ public class MessageReader implements Reader<Message> {
                     return ProcessStatus.ERROR;
             }
         }
-
         state = State.DONE;
         value = new Message(login, message);
         stringReader.reset();
