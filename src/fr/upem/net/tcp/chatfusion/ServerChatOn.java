@@ -1,9 +1,15 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
+import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
+import fr.upem.net.tcp.chatfusion.Reader.Reader;
+import fr.upem.net.tcp.chatfusion.Reader.StringReader;
+import fr.upem.net.tcp.chatfusion.trame.Trame;
+import fr.upem.net.tcp.chatfusion.trame.TrameString;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
@@ -20,10 +26,11 @@ public class ServerChatOn {
         private final SocketChannel sc;
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
-        private final ArrayDeque<Message> queue = new ArrayDeque<>();
+        private final ArrayDeque<Trame> queue = new ArrayDeque<>();
         private Charset cs = StandardCharsets.UTF_8;
         private MessageReader msgReader = new MessageReader();
         private StringReader stringReader = new StringReader();
+        private ConnectReader connectReader = new ConnectReader();
         private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
@@ -109,13 +116,12 @@ public class ServerChatOn {
          */
         public void connection() {
             logger.info("DONE");
-            var login = stringReader.get();
+            var trame = connectReader.get();
+            var login = trame.Compsants().get(0);
             logger.info(login);
             if (IsConnect(login)) {
-                if (bufferOut.remaining() >= Integer.BYTES) {
-                    bufferOut.putInt(3);
-                    updateInterestOps();
-                }
+                var trameRefus = new TrameString(3, new ArrayList<String>());
+                queueMessage(trameRefus);
             } else {
                 connectedClients.add(new Client(login));
                 connectionAccepted(login);
@@ -127,21 +133,19 @@ public class ServerChatOn {
          * @param login String
          */
         private void connectionAccepted(String login) {
-            var bb = cs.encode(login);
-            if (bufferOut.remaining() >= Integer.BYTES + bb.limit()) {
-                bufferOut.putInt(2);
-                bufferOut.put(bb);
-                updateInterestOps();
-            }
+            var list = new ArrayList<String>();
+            list.add(name);
+            var trameAccepted = new TrameString(2, list);
+            queueMessage(trameAccepted);
         }
 
         /**
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          *
-         * @param msg Message
+         * @param trame Message
          */
-        public void queueMessage(Message msg) {
-            queue.add(msg);
+        public void queueMessage(Trame trame) {
+            queue.add(trame);
             logger.info("" + queue.size());
             processOut();
             updateInterestOps();
@@ -152,12 +156,11 @@ public class ServerChatOn {
          */
         private void processOut() {
             var previewMsg = queue.peek();
-            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()/*previewMsg.login().length() + previewMsg.message().length() + 2 * Integer.BYTES*/) {
+            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()) {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
-                var login = fullMsg.login();
-                var msg = fullMsg.message();
-                bufferOut.putInt(login.length()).put(cs.encode(login)).putInt(msg.length()).put(cs.encode(msg));
+
+                bufferOut.put(fullMsg.ParsetoByteBuffer());
             }
         }
 

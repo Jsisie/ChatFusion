@@ -1,4 +1,8 @@
-package fr.upem.net.tcp.chatfusion;
+package fr.upem.net.tcp.chatfusion.Reader;
+
+import fr.upem.net.tcp.chatfusion.Message;
+import fr.upem.net.tcp.chatfusion.Reader.Reader;
+import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 
 import java.nio.ByteBuffer;
 

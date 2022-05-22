@@ -1,5 +1,8 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
+import fr.upem.net.tcp.chatfusion.Reader.Reader;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
