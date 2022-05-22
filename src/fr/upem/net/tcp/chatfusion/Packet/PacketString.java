@@ -2,6 +2,7 @@ package fr.upem.net.tcp.chatfusion.Packet;
 
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import java.util.List;
 public class PacketString implements Packet {
     private final int opCode;
     private final List<String> components;
+    private final Charset cs = StandardCharsets.UTF_8;
 
     public PacketString(int opCode, List<String> list) {
         this.opCode = opCode;
@@ -23,9 +25,8 @@ public class PacketString implements Packet {
     @Override
     public int size() {
         var size = Integer.BYTES;
-        for (var component : components) {
-            size += StandardCharsets.UTF_8.encode(component).limit() + Integer.BYTES;
-        }
+        for (var component : components)
+            size += cs.encode(component).limit() + Integer.BYTES;
         return size;
     }
 
@@ -39,7 +40,7 @@ public class PacketString implements Packet {
         ByteBuffer bb = ByteBuffer.allocate(size());
         bb.putInt(opCode);
         for (var component : components) {
-            var bbComponent = StandardCharsets.UTF_8.encode(component);
+            var bbComponent = cs.encode(component);
             bb.putInt(bbComponent.limit());
             bb.put(bbComponent);
         }
