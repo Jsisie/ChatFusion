@@ -9,12 +9,14 @@ public class PacketFusionInit implements Packet {
     private final int opCode;
     private final List<String> components;
     private final String name;
+    private final int nbMembers;
     private final Charset cs = StandardCharsets.UTF_8;
 
     public PacketFusionInit(int opCode, String name, int nbMembers, List<String> members) {
         this.opCode = opCode;
         this.components = members;
         this.name = name;
+        this.nbMembers = nbMembers;
     }
 
     @Override
@@ -44,6 +46,7 @@ public class PacketFusionInit implements Packet {
         bb.putInt(bbName.limit());
         bb.put(bbName);
         bb.putInt(name.length());
+        bb.putInt(nbMembers);
         for (var component : components) {
             var bbComponent = cs.encode(component);
             bb.putInt(bbComponent.limit());
