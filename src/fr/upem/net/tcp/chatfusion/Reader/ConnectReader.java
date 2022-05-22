@@ -33,7 +33,6 @@ public class ConnectReader implements Reader<PacketString> {
             stringReader.reset();
         }
 
-
         state = ConnectReader.State.DONE;
         var list = new ArrayList<String>();
         list.add(login);
