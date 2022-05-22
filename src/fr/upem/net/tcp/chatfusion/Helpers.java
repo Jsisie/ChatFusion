@@ -15,12 +15,9 @@ class Helpers {
         }
         int interestOps = key.interestOps();
         var joiner = new StringJoiner("|");
-        if ((interestOps & SelectionKey.OP_ACCEPT) != 0)
-            joiner.add("OP_ACCEPT");
-        if ((interestOps & SelectionKey.OP_READ) != 0)
-            joiner.add("OP_READ");
-        if ((interestOps & SelectionKey.OP_WRITE) != 0)
-            joiner.add("OP_WRITE");
+        if ((interestOps & SelectionKey.OP_ACCEPT) != 0) joiner.add("OP_ACCEPT");
+        if ((interestOps & SelectionKey.OP_READ) != 0) joiner.add("OP_READ");
+        if ((interestOps & SelectionKey.OP_WRITE) != 0) joiner.add("OP_WRITE");
         return joiner.toString();
     }
 
@@ -56,8 +53,7 @@ class Helpers {
             System.out.println("\tServerSocketChannel can perform : " + possibleActionsToString(key));
         } else {
             var sc = (SocketChannel) channel;
-            System.out.println(
-                    "\tClient " + remoteAddressToString(sc) + " can perform : " + possibleActionsToString(key));
+            System.out.println("\tClient " + remoteAddressToString(sc) + " can perform : " + possibleActionsToString(key));
         }
     }
 
@@ -66,12 +62,9 @@ class Helpers {
             return "CANCELLED";
         }
         var joiner = new StringJoiner(" and ");
-        if (key.isAcceptable())
-            joiner.add("ACCEPT");
-        if (key.isReadable())
-            joiner.add("READ");
-        if (key.isWritable())
-            joiner.add("WRITE");
+        if (key.isAcceptable()) joiner.add("ACCEPT");
+        if (key.isReadable()) joiner.add("READ");
+        if (key.isWritable()) joiner.add("WRITE");
         return joiner.toString();
     }
 }

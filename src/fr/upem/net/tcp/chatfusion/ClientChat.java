@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class ClientChat {
 
-    private class Context {
+    private static class Context {
         private final SelectionKey key;
         private final SocketChannel sc;
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
@@ -38,20 +38,22 @@ public class ClientChat {
          * and after the call
          */
         private void processIn() {
-            for (;;) {
+            for (; ; ) {
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
-                    case DONE:
+                    case DONE -> {
                         var value = msgReader.get();
                         System.out.println(value.login() + ": " + value.message());
                         msgReader.reset();
-                        break;
-                    case REFILL:
+                    }
+                    case REFILL -> {
                         updateInterestOps();
                         return;
-                    case ERROR:
+                    }
+                    case ERROR -> {
                         silentlyClose();
                         return;
+                    }
                 }
             }
         }
@@ -92,16 +94,12 @@ public class ClientChat {
         private void updateInterestOps() {
             int ops = 0;
 
-            if (!closed && bufferIn.hasRemaining())
-                ops |= SelectionKey.OP_READ;
+            if (!closed && bufferIn.hasRemaining()) ops |= SelectionKey.OP_READ;
 
-            if (bufferOut.position() > 0)
-                ops |= SelectionKey.OP_WRITE;
+            if (bufferOut.position() > 0) ops |= SelectionKey.OP_WRITE;
 
-            if (ops == 0)
-                silentlyClose();
-            else
-                key.interestOps(ops);
+            if (ops == 0) silentlyClose();
+            else key.interestOps(ops);
         }
 
         private void silentlyClose() {
@@ -118,7 +116,7 @@ public class ClientChat {
          * The convention is that both buffers are in write-mode before the call to
          * doRead and after the call
          *
-         * @throws IOException
+         * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
             if (sc.read(bufferIn) == -1) // read() returns -1 when connection closed
@@ -132,7 +130,7 @@ public class ClientChat {
          * The convention is that both buffers are in write-mode before the call to
          * doWrite and after the call
          *
-         * @throws IOException
+         * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doWrite() throws IOException {
             sc.write(bufferOut.flip());
@@ -160,7 +158,7 @@ public class ClientChat {
     private Context uniqueContext;
     private final Object lock = new Object();
     private final int CAPACITY = 10;
-    private final ArrayDeque queueOut = new ArrayDeque<Message>(CAPACITY);
+    private final ArrayDeque<Message> queueOut = new ArrayDeque<>(CAPACITY);
 
     public ClientChat(String login, InetSocketAddress serverAddress) throws IOException {
         this.serverAddress = serverAddress;
@@ -194,8 +192,7 @@ public class ClientChat {
      */
     private void sendCommand(String msg) throws InterruptedException {
         synchronized (lock) {
-            while (queueOut.size() == CAPACITY)
-                lock.wait();
+            while (queueOut.size() == CAPACITY) lock.wait();
             queueOut.add(new Message(login, msg));
             selector.wakeup();
         }
@@ -206,8 +203,7 @@ public class ClientChat {
      */
     private void processCommands() {
         synchronized (lock) {
-            if (queueOut.isEmpty())
-                return;
+            if (queueOut.isEmpty()) return;
             var message = (Message) queueOut.pop();
             uniqueContext.queueMessage(message);
             lock.notify();
@@ -250,7 +246,7 @@ public class ClientChat {
     }
 
     private void silentlyClose(SelectionKey key) {
-        Channel sc = (Channel) key.channel();
+        Channel sc = key.channel();
         try {
             sc.close();
         } catch (IOException e) {

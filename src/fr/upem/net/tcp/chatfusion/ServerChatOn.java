@@ -4,8 +4,8 @@ import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
 import fr.upem.net.tcp.chatfusion.Reader.StringReader;
-import fr.upem.net.tcp.chatfusion.trame.Trame;
-import fr.upem.net.tcp.chatfusion.trame.TrameString;
+import fr.upem.net.tcp.chatfusion.Component.Packet;
+import fr.upem.net.tcp.chatfusion.Component.packetString;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,11 +26,11 @@ public class ServerChatOn {
         private final SocketChannel sc;
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
-        private final ArrayDeque<Trame> queue = new ArrayDeque<>();
-        private Charset cs = StandardCharsets.UTF_8;
-        private MessageReader msgReader = new MessageReader();
-        private StringReader stringReader = new StringReader();
-        private ConnectReader connectReader = new ConnectReader();
+        private final ArrayDeque<Packet> queue = new ArrayDeque<>();
+        private final Charset cs = StandardCharsets.UTF_8;
+        private final MessageReader msgReader = new MessageReader();
+        private final StringReader stringReader = new StringReader();
+        private final ConnectReader connectReader = new ConnectReader();
         private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
@@ -93,8 +93,7 @@ public class ServerChatOn {
                 for (var ssc : connectedServer) {
                     try {
                         var sc = ssc.accept();
-                        if(sc != null)
-                            sc.write(bufferIn);
+                        if (sc != null) sc.write(bufferIn);
                     } catch (IOException e) {
                         logger.warning("The connection with the server " + ssc + " has suddenly stopped");
                         return;
@@ -104,8 +103,7 @@ public class ServerChatOn {
                 // No, send to leader
                 try {
                     var sc = leader.accept();
-                    if(sc != null)
-                        sc.write(bufferIn);
+                    if (sc != null) sc.write(bufferIn);
                 } catch (IOException e) {
                     logger.warning("The connection with the server " + leader + " has suddenly stopped");
                     return;
@@ -119,12 +117,12 @@ public class ServerChatOn {
          */
         public void connection() {
             logger.info("DONE");
-            var trame = connectReader.get();
-            var login = trame.Compsants().get(0);
+            var packet = connectReader.get();
+            var login = packet.components().get(0);
             logger.info(login);
             if (IsConnect(login)) {
-                var trameRefus = new TrameString(3, new ArrayList<String>());
-                queueMessage(trameRefus);
+                var packetRefusal = new packetString(3, new ArrayList<String>());
+                queueMessage(packetRefusal);
             } else {
                 connectedClients.add(new Client(login));
                 connectionAccepted(login);
@@ -138,17 +136,17 @@ public class ServerChatOn {
         private void connectionAccepted(String login) {
             var list = new ArrayList<String>();
             list.add(name);
-            var trameAccepted = new TrameString(2, list);
-            queueMessage(trameAccepted);
+            var packetAccepted = new packetString(2, list);
+            queueMessage(packetAccepted);
         }
 
         /**
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          *
-         * @param trame Message
+         * @param packet Message
          */
-        public void queueMessage(Trame trame) {
-            queue.add(trame);
+        public void queueMessage(Packet packet) {
+            queue.add(packet);
             logger.info("" + queue.size());
             processOut();
             updateInterestOps();
@@ -159,11 +157,11 @@ public class ServerChatOn {
          */
         private void processOut() {
             var previewMsg = queue.peek();
-            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.Size()) {
+            while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
 
-                bufferOut.put(fullMsg.ParsetoByteBuffer());
+                bufferOut.put(fullMsg.parseToByteBuffer());
             }
         }
 
@@ -230,8 +228,7 @@ public class ServerChatOn {
      */
     private boolean IsConnect(String login) {
         for (var client : connectedClients) {
-            if (client.checkIsLogin(login))
-                return true;
+            if (client.checkIsLogin(login)) return true;
         }
         return false;
     }
