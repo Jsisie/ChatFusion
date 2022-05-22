@@ -13,10 +13,9 @@ public class StringReader implements Reader<String> {
     private final int BUFFER_SIZE = 1024;
     private final IntReader intReader = new IntReader();
     private final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-    private final Charset UTF8 = StandardCharsets.UTF_8;
+    private final Charset cs = StandardCharsets.UTF_8;
     private final Predicate<Integer> isValidSize = (Integer number) -> number > 0 && number <= BUFFER_SIZE;
     private String value;
-
 
     @Override
     public ProcessStatus process(ByteBuffer buffer) {
@@ -44,7 +43,7 @@ public class StringReader implements Reader<String> {
         }
         state = State.DONE;
         internalBuffer.flip();
-        value = UTF8.decode(internalBuffer).toString();
+        value = cs.decode(internalBuffer).toString();
         return ProcessStatus.DONE;
     }
 
