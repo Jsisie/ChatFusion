@@ -7,6 +7,7 @@ import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 
+import javax.naming.Context;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -75,7 +76,37 @@ public class ServerChatOn {
          *
          */
         private void initFusion() {
+            // check if a merge is being made
 
+
+            // Test if server == leader
+            if (leader == serverSocketChannel) {
+                // get the list of connected server to the request server
+                List<ServerSocketChannel> requestServers = null;
+                // Yes, test if both server have a common server
+                if(hasServerInCommon(requestServers)) { // TODO - replace 'null' with a list of all server from the request server
+                    // send packet (9)
+                } else {
+                    // send packet (10)
+                }
+            } else {
+                // send packet (11)
+            }
+
+        }
+
+        private List<ServerSocketChannel> getServerListFromBuffer() {
+            var requestServers = new ArrayList<ServerSocketChannel>();
+
+            // process here the list from the buffer
+            return requestServers;
+        }
+
+        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
+            for(var serv : requestServers)
+                if(connectedServer.contains(serv))
+                    return true;
+            return false;
         }
 
         /**
