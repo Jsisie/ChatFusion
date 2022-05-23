@@ -12,16 +12,15 @@ public class PacketFusionInit implements Packet {
     private final List<String> components;
     private final String name;
     private final int nbMembers;
-    private  final SocketAddress sc;
-
+    private  final SocketAddress sa;
     private final Charset cs = StandardCharsets.UTF_8;
 
-    public PacketFusionInit(int opCode, String name, SocketAddress sc, int nbMembers, List<String> members) {
+    public PacketFusionInit(int opCode, String name, SocketAddress sa, int nbMembers, List<String> members) {
         this.opCode = opCode;
         this.name = name;
         this.nbMembers = nbMembers;
         this.components = members;
-        this.sc = sc;
+        this.sa = sa;
     }
 
     public String GetName(){
@@ -29,7 +28,7 @@ public class PacketFusionInit implements Packet {
     }
 
     public SocketAddress getSocketAddress() {
-        return sc;
+        return sa;
     }
 
     @Override
@@ -60,7 +59,7 @@ public class PacketFusionInit implements Packet {
         bb.putInt(bbName.limit());
         bb.put(bbName);
 
-        var inetSA = (InetSocketAddress) sc;
+        var inetSA = (InetSocketAddress) sa;
         var bbIPAddress = cs.encode(inetSA.getHostName());
         bb.put(bbIPAddress);
         bb.putInt(inetSA.getPort());
