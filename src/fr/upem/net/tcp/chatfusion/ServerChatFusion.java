@@ -1,9 +1,6 @@
 package fr.upem.net.tcp.chatfusion;
 
-import fr.upem.net.tcp.chatfusion.Packet.Message;
-import fr.upem.net.tcp.chatfusion.Packet.Packet;
-import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
-import fr.upem.net.tcp.chatfusion.Packet.PacketString;
+import fr.upem.net.tcp.chatfusion.Packet.*;
 import fr.upem.net.tcp.chatfusion.Reader.*;
 
 import java.io.IOException;
@@ -217,24 +214,25 @@ public class ServerChatFusion {
                 case DONE -> {
                     // get packet from Reader
                     var packet = fusionInitReaderOK.get();
-                    // Test if server == leader
+                    // Test if actual server == leader
                     if (leader == null) {
+                        // Check that both servers doesn't have a similar server linked to themselves
                         if (!hasServerInCommon(packet.components())) {
-                            var connectedServerName = getListConnectedServer();
                             try {
+                                var connectedServerName = getListConnectedServer();
                                 var socketAddress = sc.getLocalAddress();
                                 var packetFusionInit = new PacketFusionInit(9, name, socketAddress, connectedServer.size(), connectedServerName);
                                 queueMessage(packetFusionInit);
+
+                                switchLeaderName(packet.GetName());
+
+                                fusion(packet);
                             } catch (IOException e) {
                                 logger.info("fail socketAddress");
                                 return;
                             }
-
-                            switchLeaderName(packet.GetName());
-
-                            fusion(packet);
                         } else {
-
+                            // TODO - send packet (11)
                         }
                     }
                 }
@@ -249,7 +247,15 @@ public class ServerChatFusion {
 
         private void fusion(PacketFusionInit packet) {
             if (leader != null) {
-                // TODO - send packet 14
+                try {
+                    leader.sc.getRemoteAddress();
+                    var packetChangeLeader = new PacketSocketAddress(14, leader.sc.getRemoteAddress());
+
+                    // TODO - broadcast on all connected server here
+                } catch (IOException e) {
+                    logger.info("Channel was closed");
+                    return;
+                }
                 silentlyClose();
             } else {
                 connectedServer.put(packet.GetName(),this);
@@ -269,7 +275,6 @@ public class ServerChatFusion {
             }
             return false;
         }
-
 
         /**
          *
