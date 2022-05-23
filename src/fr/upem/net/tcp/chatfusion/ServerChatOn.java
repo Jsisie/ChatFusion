@@ -72,15 +72,14 @@ public class ServerChatOn {
         private void initFusion() {
             // check if a merge is being made
 
-
             // Test if server == leader
-            if (leader == serverSocketChannel) {
+            if (leader == null) {
                 // get the list of connected server to the request server
                 List<ServerSocketChannel> requestServers = getServerListFromBuffer();
                 // Yes, test if both server have a common server
                 if(hasServerInCommon(requestServers)) {
                     // send packet (9)
-                    var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer);
+                    var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer.keySet().stream().toList());
                     queueMessage(packet);
                 } else {
                     // send packet (10) Fusion_Init_KO
@@ -102,7 +101,7 @@ public class ServerChatOn {
 
         private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
             for(var serv : requestServers)
-                if(connectedServer.contains(serv))
+//                if(connectedServer.contains(serv))
                     return true;
             return false;
         }
