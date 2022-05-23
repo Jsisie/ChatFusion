@@ -209,8 +209,14 @@ public class ServerChatOn {
                     if (leader == null) {
                         if (!hasServerInCommon(packet.components())) {
                             var connectedServerName = getListConnectedServer();
-                            var packetFusionInit = new PacketFusionInit(9, name, connectedServer.size(), connectedServerName);
-                            queueMessage(packetFusionInit);
+                            try {
+                                var socketAddress = sc.getLocalAddress();
+                                var packetFusionInit = new PacketFusionInit(9, name, socketAddress, connectedServer.size(), connectedServerName);
+                                queueMessage(packetFusionInit);
+                            } catch (IOException e) {
+                                logger.info("fail socketAddress");
+                                return;
+                            }
 
                             switchLeaderName(packet.GetName());
 
@@ -234,7 +240,7 @@ public class ServerChatOn {
                 // TODO - send packet 14
                 silentlyClose();
             } else {
-                connectedServer.put(packet.GetName(), packet.getSocketAddress());
+                connectedServer.put(packet.GetName(),this);
             }
         }
 

@@ -13,14 +13,16 @@ public class PacketFusionInit implements Packet {
     private final List<String> components;
     private final String name;
     private final int nbMembers;
+    private  final SocketAddress sc;
 
     private final Charset cs = StandardCharsets.UTF_8;
 
-    public PacketFusionInit(int opCode, String name, int nbMembers, List<String> members) {
+    public PacketFusionInit(int opCode, String name, SocketAddress sc,  int nbMembers, List<String> members) {
         this.opCode = opCode;
         this.name = name;
         this.nbMembers = nbMembers;
         this.components = members;
+        this.sc = sc;
     }
 
     public String GetName(){
