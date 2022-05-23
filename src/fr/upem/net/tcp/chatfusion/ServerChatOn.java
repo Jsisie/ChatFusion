@@ -1,5 +1,11 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
+import fr.upem.net.tcp.chatfusion.Packet.PacketOpcode;
+import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
+import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
+import fr.upem.net.tcp.chatfusion.Reader.Reader;
+import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 import fr.upem.net.tcp.chatfusion.Packet.Message;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
@@ -64,22 +70,26 @@ public class ServerChatOn {
          *
          */
         private void initFusion() {
-//            // check if a merge is being made
-//
-//
-//            // Test if server == leader
-//            if (leader == null) {
-//                // get the list of connected server to the request server
-//                List<ServerSocketChannel> requestServers = null;
-//                // Yes, test if both server have a common server
-//                if(hasServerInCommon(requestServers)) { // TODO - replace 'null' with a list of all server from the request server
-//                    // send packet (9)
-//                } else {
-//                    // send packet (10)
-//                }
-//            } else {
-//                // send packet (11)
-//            }
+            // check if a merge is being made
+
+            // Test if server == leader
+            if (leader == null) {
+                // get the list of connected server to the request server
+                List<ServerSocketChannel> requestServers = getServerListFromBuffer();
+                // Yes, test if both server have a common server
+                if(hasServerInCommon(requestServers)) {
+                    // send packet (9)
+                    var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer.keySet().stream().toList());
+                    queueMessage(packet);
+                } else {
+                    // send packet (10) Fusion_Init_KO
+                    var packet = new PacketOpcode(10);
+                    queueMessage(packet);
+                }
+            } else {
+                // send packet (11)
+
+            }
         }
 
         private List<ServerSocketChannel> getServerListFromBuffer() {
@@ -89,12 +99,12 @@ public class ServerChatOn {
             return requestServers;
         }
 
-//        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
-//            for(var serv : requestServers)
+        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
+            for(var serv : requestServers)
 //                if(connectedServer.contains(serv))
-//                    return true;
-//            return false;
-//        }
+                    return true;
+            return false;
+        }
 
         /**
          *
