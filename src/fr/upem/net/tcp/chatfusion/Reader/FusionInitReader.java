@@ -9,16 +9,21 @@ import java.util.List;
 public class FusionInitReader implements Reader {
 
     private enum State {DONE, WAITING, ERROR}
+
     private FusionInitReader.State state = FusionInitReader.State.WAITING;
     private PacketFusionInit value;
     private String name = "";
-    private int nbMembre = -1;
-    private List<String> namesMember = new ArrayList<>();
+    private int nbMember = -1;
+    private final List<String> namesMember = new ArrayList<>();
     private final StringReader stringReader = new StringReader();
     private final IntReader intReader = new IntReader();
     //private SocketAdresse adresse;
 
+    private final int opCode;
 
+    public FusionInitReader(int opCode) {
+        this.opCode = opCode;
+    }
 
     @Override
     public ProcessStatus process(ByteBuffer bb) {
@@ -41,11 +46,11 @@ public class FusionInitReader implements Reader {
             stringReader.reset();
         }
 //todo reup nbmembre
-        if(nbMembre == -1){
+        if (nbMember == -1) {
             ProcessStatus status = intReader.process(bb);
             switch (status) {
                 case DONE:
-                    nbMembre = intReader.get();
+                    nbMember = intReader.get();
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -56,7 +61,7 @@ public class FusionInitReader implements Reader {
             intReader.reset();
         }
 //todo modifier en for pour recuperer les names de serveurs
-        while (namesMember.size() < nbMembre) {
+        while (namesMember.size() < nbMember) {
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
                 case DONE:
@@ -72,7 +77,7 @@ public class FusionInitReader implements Reader {
             stringReader.reset();
         }
         state = FusionInitReader.State.DONE;
-        value = new PacketFusionInit(8, name, nbMembre, namesMember);
+        value = new PacketFusionInit(opCode, name, nbMember, namesMember);
         //stringReader.reset();
         return ProcessStatus.DONE;
     }
@@ -88,7 +93,7 @@ public class FusionInitReader implements Reader {
     @Override
     public void reset() {
         name = "";
-        nbMembre = -1;
+        nbMember = -1;
         namesMember.clear();
     }
 }

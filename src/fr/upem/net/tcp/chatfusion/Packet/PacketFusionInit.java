@@ -19,6 +19,10 @@ public class PacketFusionInit implements Packet {
         this.components = members;
     }
 
+    public String GetName(){
+        return  name;
+    }
+
     @Override
     public int opCodeGet() {
         return opCode;

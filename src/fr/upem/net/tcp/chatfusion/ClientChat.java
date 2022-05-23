@@ -20,7 +20,7 @@ public class ClientChat {
     private static class Context {
         private final SelectionKey key;
         private final SocketChannel sc;
-        private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
+            private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
         private final ArrayDeque<Message> queue = new ArrayDeque<>();
         private boolean closed = false;
