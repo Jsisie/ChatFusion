@@ -1,6 +1,6 @@
 package fr.upem.net.tcp.chatfusion.Reader;
 
-import fr.upem.net.tcp.chatfusion.Message;
+import fr.upem.net.tcp.chatfusion.Packet.Message;
 
 import java.nio.ByteBuffer;
 
@@ -46,7 +46,6 @@ public class MessageReader implements Reader<Message> {
                     return ProcessStatus.ERROR;
             }
         }
-
         state = State.DONE;
         value = new Message(login, message);
         stringReader.reset();
