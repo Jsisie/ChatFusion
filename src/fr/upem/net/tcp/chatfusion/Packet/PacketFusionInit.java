@@ -1,5 +1,6 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -15,7 +16,7 @@ public class PacketFusionInit implements Packet {
 
     private final Charset cs = StandardCharsets.UTF_8;
 
-    public PacketFusionInit(int opCode, String name, SocketAddress sc,  int nbMembers, List<String> members) {
+    public PacketFusionInit(int opCode, String name, SocketAddress sc, int nbMembers, List<String> members) {
         this.opCode = opCode;
         this.name = name;
         this.nbMembers = nbMembers;
@@ -27,7 +28,6 @@ public class PacketFusionInit implements Packet {
         return  name;
     }
 
-    // TODO - add sc as parameters ???
     public SocketAddress getSocketAddress() {
         return sc;
     }
@@ -41,6 +41,7 @@ public class PacketFusionInit implements Packet {
     public int size() {
         var size = Integer.BYTES * 2;
         size += cs.encode(name).limit() + Integer.BYTES;
+        size += Integer.BYTES * 2 + Byte.BYTES * 4;
         for (var component : components)
             size += cs.encode(component).limit() + Integer.BYTES;
         return size;
@@ -58,6 +59,12 @@ public class PacketFusionInit implements Packet {
         var bbName = cs.encode(name);
         bb.putInt(bbName.limit());
         bb.put(bbName);
+
+        var inetSA = (InetSocketAddress) sc;
+        var bbIPAddress = cs.encode(inetSA.getHostName());
+        bb.put(bbIPAddress);
+        bb.putInt(inetSA.getPort());
+
         bb.putInt(name.length());
         bb.putInt(nbMembers);
         for (var component : components) {
