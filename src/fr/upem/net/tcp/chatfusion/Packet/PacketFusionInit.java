@@ -13,6 +13,7 @@ public class PacketFusionInit implements Packet {
     private final List<String> components;
     private final String name;
     private final int nbMembers;
+
     private final Charset cs = StandardCharsets.UTF_8;
 
     public PacketFusionInit(int opCode, String name, int nbMembers, List<String> members) {

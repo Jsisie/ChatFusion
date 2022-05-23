@@ -3,6 +3,8 @@ package fr.upem.net.tcp.chatfusion.Reader;
 import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
 
 import java.net.InetSocketAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +12,10 @@ import java.util.List;
 public class FusionInitReader implements Reader<PacketFusionInit> {
 
     private enum State {DONE, WAITING, ERROR}
+
     private FusionInitReader.State state = FusionInitReader.State.WAITING;
     private PacketFusionInit value;
+    private int opCode;
     private String name = "";
     private InetSocketAddress sc;
     private int nbMember = -1;
@@ -20,7 +24,6 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
     private final IntReader intReader = new IntReader();
     private final SocketAddressReader socketAddressReader = new SocketAddressReader();
 
-    private final int opCode;
 
     public FusionInitReader(int opCode) {
         this.opCode = opCode;
