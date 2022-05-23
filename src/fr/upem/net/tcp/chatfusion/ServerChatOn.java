@@ -26,6 +26,138 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerChatOn {
+
+    private final List<Client> connectedClients = new ArrayList<>();
+    private final HashMap<String, Context> connectedServer = new HashMap<>();
+    private static final int BUFFER_SIZE = 1_024;
+    private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
+    private final ServerSocketChannel serverSocketChannel;
+    private final Selector selector;
+    private final Context leader;
+    private final String name;
+
+    public ServerChatOn(int port, String name) throws IOException {
+        serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.bind(new InetSocketAddress(port));
+        // switch server to non-blocking mode
+        serverSocketChannel.configureBlocking(false);
+        selector = Selector.open();
+        this.name = name;
+        // initialize by default the leader being the server itself
+        this.leader = null;
+    }
+
+    /**
+     * @param login String
+     * @return boolean
+     */
+    private boolean IsConnect(String login) {
+        for (var client : connectedClients) {
+            if (client.checkIsLogin(login)) return true;
+        }
+        return false;
+    }
+
+    public void launch() throws IOException {
+        serverSocketChannel.configureBlocking(false);
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+        while (!Thread.interrupted()) {
+            Helpers.printKeys(selector); // for debug
+            System.out.println("Starting select");
+            try {
+                selector.select(this::treatKey);
+            } catch (UncheckedIOException tunneled) {
+                throw tunneled.getCause();
+            }
+            System.out.println("Select finished");
+        }
+    }
+
+    private void treatKey(SelectionKey key) {
+        Helpers.printSelectedKey(key); // for debug
+        try {
+            if (key.isValid() && key.isAcceptable()) {
+                doAccept(key);
+            }
+        } catch (IOException ioe) {
+            // lambda call in select requires to tunnel IOException
+            throw new UncheckedIOException(ioe);
+        }
+        try {
+            if (key.isValid() && key.isWritable()) {
+                ((Context) key.attachment()).doWrite();
+            }
+            if (key.isValid() && key.isReadable()) {
+                ((Context) key.attachment()).doRead();
+            }
+        } catch (IOException e) {
+            logger.log(Level.INFO, "Connection closed with client due to IOException", e);
+            silentlyClose(key);
+        }
+    }
+
+    private void doAccept(SelectionKey key) throws IOException {
+        SocketChannel sc = serverSocketChannel.accept();
+        if (sc == null) {
+            logger.warning("liar accept");
+            return; // the selector gave a bad hint
+        }
+        sc.configureBlocking(false);
+        var clientKey = sc.register(selector, SelectionKey.OP_READ);
+        clientKey.attach(new Context(this, clientKey));
+    }
+
+    private void silentlyClose(SelectionKey key) {
+        Channel sc = key.channel();
+        try {
+            sc.close();
+        } catch (IOException e) {
+            // ignore exception
+        }
+    }
+
+    /**
+     * Add a message to all connected clients queue
+     *
+     * @param packet Message
+     */
+    private void broadcast(Packet packet) {
+        var keys = selector.keys();
+        for (var key : keys) {
+            var attach = key.attachment();
+            if (attach == null) continue;
+            var context = (Context) attach;
+            context.queueMessage(packet);
+        }
+    }
+
+    public static void main(String[] args) throws NumberFormatException, IOException {
+        if (args.length != 2) {
+            usage();
+            return;
+        }
+        new ServerChatOn(Integer.parseInt(args[0]), args[1]).launch();
+    }
+
+    private static void usage() {
+        System.out.println("Usage : ServerSumBetter port");
+    }
+
+
+
+
+    // #################### CLIENT #################### //
+
+    private record Client(String login) {
+        private boolean checkIsLogin(String login) {
+            return this.login.equals(login);
+        }
+    }
+
+
+
+    // #################### CONTEXT #################### //
+
     private class Context {
         private final SelectionKey key;
         private final SocketChannel sc;
@@ -258,129 +390,6 @@ public class ServerChatOn {
             updateInterestOps();
         }
 
-    }
-
-    /**
-     * @param login String
-     * @return boolean
-     */
-    private boolean IsConnect(String login) {
-        for (var client : connectedClients) {
-            if (client.checkIsLogin(login)) return true;
-        }
-        return false;
-    }
-
-    private record Client(String login) {
-        private boolean checkIsLogin(String login) {
-            return this.login.equals(login);
-        }
-
-    }
-
-    private final List<Client> connectedClients = new ArrayList<>();
-    private final HashMap<String, Context> connectedServer = new HashMap<>();
-    private static final int BUFFER_SIZE = 1_024;
-    private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
-    private final ServerSocketChannel serverSocketChannel;
-    private final Selector selector;
-    private final Context leader;
-    private final String name;
-
-    public ServerChatOn(int port, String name) throws IOException {
-        serverSocketChannel = ServerSocketChannel.open();
-        serverSocketChannel.bind(new InetSocketAddress(port));
-        // switch server to non-blocking mode
-        serverSocketChannel.configureBlocking(false);
-        selector = Selector.open();
-        this.name = name;
-        // initialize by default the leader being the server itself
-        this.leader = null;
-    }
-
-    public void launch() throws IOException {
-        serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        while (!Thread.interrupted()) {
-            Helpers.printKeys(selector); // for debug
-            System.out.println("Starting select");
-            try {
-                selector.select(this::treatKey);
-            } catch (UncheckedIOException tunneled) {
-                throw tunneled.getCause();
-            }
-            System.out.println("Select finished");
-        }
-    }
-
-    private void treatKey(SelectionKey key) {
-        Helpers.printSelectedKey(key); // for debug
-        try {
-            if (key.isValid() && key.isAcceptable()) {
-                doAccept(key);
-            }
-        } catch (IOException ioe) {
-            // lambda call in select requires to tunnel IOException
-            throw new UncheckedIOException(ioe);
-        }
-        try {
-            if (key.isValid() && key.isWritable()) {
-                ((Context) key.attachment()).doWrite();
-            }
-            if (key.isValid() && key.isReadable()) {
-                ((Context) key.attachment()).doRead();
-            }
-        } catch (IOException e) {
-            logger.log(Level.INFO, "Connection closed with client due to IOException", e);
-            silentlyClose(key);
-        }
-    }
-
-    private void doAccept(SelectionKey key) throws IOException {
-        SocketChannel sc = serverSocketChannel.accept();
-        if (sc == null) {
-            logger.warning("liar accept");
-            return; // the selector gave a bad hint
-        }
-        sc.configureBlocking(false);
-        var clientKey = sc.register(selector, SelectionKey.OP_READ);
-        clientKey.attach(new Context(this, clientKey));
-    }
-
-    private void silentlyClose(SelectionKey key) {
-        Channel sc = key.channel();
-        try {
-            sc.close();
-        } catch (IOException e) {
-            // ignore exception
-        }
-    }
-
-    /**
-     * Add a message to all connected clients queue
-     *
-     * @param packet Message
-     */
-    private void broadcast(Packet packet) {
-        var keys = selector.keys();
-        for (var key : keys) {
-            var attach = key.attachment();
-            if (attach == null) continue;
-            var context = (Context) attach;
-            context.queueMessage(packet);
-        }
-    }
-
-    public static void main(String[] args) throws NumberFormatException, IOException {
-        if (args.length != 2) {
-            usage();
-            return;
-        }
-        new ServerChatOn(Integer.parseInt(args[0]), args[1]).launch();
-    }
-
-    private static void usage() {
-        System.out.println("Usage : ServerSumBetter port");
     }
 
 }
