@@ -125,6 +125,18 @@ public class ServerChatOn {
             context.queueMessage(packet);
         }
     }
+    private void broadcastClient(Packet packet) {
+        for(var client : connectedClients){
+            client.context.queueMessage(packet);
+        }
+    }
+
+    private void broadcastServer(Packet packet) {
+        connectedServer.forEach((key, value) ->{
+          value.queueMessage(packet);
+        });
+    }
+
 
     private List<String> getListConnectedServer() {
         return connectedServer.keySet().stream().toList();
@@ -145,7 +157,7 @@ public class ServerChatOn {
 
     // #################### CLIENT #################### //
 
-    private record Client(String login) {
+    private record Client(String login, Context context) {
         private boolean checkIsLogin(String login) {
             return this.login.equals(login);
         }
@@ -322,7 +334,7 @@ public class ServerChatOn {
                 var packetRefusal = new PacketString(3, new ArrayList<>());
                 queueMessage(packetRefusal);
             } else {
-                connectedClients.add(new Client(login));
+                connectedClients.add(new Client(login, this));
                 connectionAccepted(login);
             }
             connectReader.reset();
