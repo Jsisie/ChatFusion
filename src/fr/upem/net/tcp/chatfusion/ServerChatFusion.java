@@ -250,13 +250,14 @@ public class ServerChatFusion {
                 try {
                     leader.sc.getRemoteAddress();
                     var packetChangeLeader = new PacketSocketAddress(14, leader.sc.getRemoteAddress());
-
-                    // TODO - broadcast on all connected server here
+                    broadcastServer(packetChangeLeader);
+                    connectedServer.forEach((key, value) ->{
+                        value.silentlyClose();
+                    });
                 } catch (IOException e) {
                     logger.info("Channel was closed");
                     return;
                 }
-                silentlyClose();
             } else {
                 connectedServer.put(packet.GetName(),this);
             }
