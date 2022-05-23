@@ -1,7 +1,6 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
-import fr.upem.net.tcp.chatfusion.ServerChatOn;
-
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -13,25 +12,23 @@ public class PacketFusionInit implements Packet {
     private final List<String> components;
     private final String name;
     private final int nbMembers;
-    private  final SocketAddress sc;
-
+    private  final SocketAddress sa;
     private final Charset cs = StandardCharsets.UTF_8;
 
-    public PacketFusionInit(int opCode, String name, SocketAddress sc,  int nbMembers, List<String> members) {
+    public PacketFusionInit(int opCode, String name, SocketAddress sa, int nbMembers, List<String> members) {
         this.opCode = opCode;
         this.name = name;
         this.nbMembers = nbMembers;
         this.components = members;
-        this.sc = sc;
+        this.sa = sa;
     }
 
     public String GetName(){
         return  name;
     }
 
-    // TODO - add sc as parameters ???
     public SocketAddress getSocketAddress() {
-        return sc;
+        return sa;
     }
 
     @Override
@@ -43,6 +40,7 @@ public class PacketFusionInit implements Packet {
     public int size() {
         var size = Integer.BYTES * 2;
         size += cs.encode(name).limit() + Integer.BYTES;
+        size += Integer.BYTES * 2 + Byte.BYTES * 4;
         for (var component : components)
             size += cs.encode(component).limit() + Integer.BYTES;
         return size;
@@ -60,6 +58,12 @@ public class PacketFusionInit implements Packet {
         var bbName = cs.encode(name);
         bb.putInt(bbName.limit());
         bb.put(bbName);
+
+        var inetSA = (InetSocketAddress) sa;
+        var bbIPAddress = cs.encode(inetSA.getHostName());
+        bb.put(bbIPAddress);
+        bb.putInt(inetSA.getPort());
+
         bb.putInt(name.length());
         bb.putInt(nbMembers);
         for (var component : components) {
