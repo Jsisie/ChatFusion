@@ -1,7 +1,5 @@
 package fr.upem.net.tcp.chatfusion.Reader;
 
-import fr.upem.net.tcp.chatfusion.Packet.Message;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -13,9 +11,9 @@ public class SocketAddressReader implements Reader<SocketAddress> {
     private StringJoiner sj = new StringJoiner(".");
     private int port;
     private InetSocketAddress value;
-
     private final IntReader intReader = new IntReader();
     private State state = State.WAITING;
+
     @Override
     public ProcessStatus process(ByteBuffer bb) {
         if (state == SocketAddressReader.State.DONE || state == SocketAddressReader.State.ERROR) {
@@ -41,7 +39,6 @@ public class SocketAddressReader implements Reader<SocketAddress> {
         } else if (intState.equals(ProcessStatus.ERROR)) {
             state = State.ERROR;
         }
-
 
         state = State.DONE;
         value = new InetSocketAddress(sj.toString(), port);
