@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class FusionInitReader implements Reader {
 
     private enum State {DONE, WAITING, ERROR}
