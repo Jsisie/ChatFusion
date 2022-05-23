@@ -3,8 +3,6 @@ package fr.upem.net.tcp.chatfusion.Reader;
 import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
 
 import java.net.InetSocketAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +13,14 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
 
     private FusionInitReader.State state = FusionInitReader.State.WAITING;
     private PacketFusionInit value;
-    private int opCode;
+    private final int opCode;
     private String name = "";
-    private InetSocketAddress sc;
+    private InetSocketAddress inetSA;
     private int nbMember = -1;
     private final List<String> namesMember = new ArrayList<>();
     private final StringReader stringReader = new StringReader();
     private final IntReader intReader = new IntReader();
     private final SocketAddressReader socketAddressReader = new SocketAddressReader();
-
 
     public FusionInitReader(int opCode) {
         this.opCode = opCode;
@@ -49,12 +46,12 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
             }
             stringReader.reset();
         }
-        // TODO - get Socket Address
-        if (sc == null) {
+
+        if (inetSA == null) {
             ProcessStatus status = socketAddressReader.process(bb);
             switch (status) {
                 case DONE:
-                    sc = (InetSocketAddress) socketAddressReader.get();
+                    inetSA = (InetSocketAddress) socketAddressReader.get();
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -65,7 +62,6 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
             socketAddressReader.reset();
         }
 
-        //todo reup nbmembre
         if (nbMember == -1) {
             ProcessStatus status = intReader.process(bb);
             switch (status) {
@@ -80,7 +76,7 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
             }
             intReader.reset();
         }
-//todo modifier en for pour recuperer les names de serveurs
+
         while (namesMember.size() < nbMember) {
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
@@ -97,8 +93,7 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
             stringReader.reset();
         }
         state = FusionInitReader.State.DONE;
-        value = new PacketFusionInit(opCode, name, sc, nbMember, namesMember);
-        //stringReader.reset();
+        value = new PacketFusionInit(opCode, name, inetSA, nbMember, namesMember);
         return ProcessStatus.DONE;
     }
 
