@@ -1,13 +1,8 @@
 package fr.upem.net.tcp.chatfusion;
 
-import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
-import fr.upem.net.tcp.chatfusion.Packet.PacketOpcode;
-import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
-import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
-import fr.upem.net.tcp.chatfusion.Reader.Reader;
-import fr.upem.net.tcp.chatfusion.Reader.StringReader;
 import fr.upem.net.tcp.chatfusion.Packet.Message;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
+import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 import fr.upem.net.tcp.chatfusion.Reader.*;
 
@@ -33,7 +28,7 @@ public class ServerChatOn {
     private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final Context leader;
+    private Context leader;
     private final String name;
 
     public ServerChatOn(int port, String name) throws IOException {
@@ -53,8 +48,7 @@ public class ServerChatOn {
      */
     private boolean IsConnect(String login) {
         for (var client : connectedClients) {
-            if (client.checkIsLogin(login))
-                return true;
+            if (client.checkIsLogin(login)) return true;
         }
         return false;
     }
@@ -132,6 +126,10 @@ public class ServerChatOn {
         }
     }
 
+    private List<String> getListConnectedServer() {
+        return connectedServer.keySet().stream().toList();
+    }
+
     public static void main(String[] args) throws NumberFormatException, IOException {
         if (args.length != 2) {
             usage();
@@ -145,8 +143,6 @@ public class ServerChatOn {
     }
 
 
-
-
     // #################### CLIENT #################### //
 
     private record Client(String login) {
@@ -154,7 +150,6 @@ public class ServerChatOn {
             return this.login.equals(login);
         }
     }
-
 
 
     // #################### CONTEXT #################### //
@@ -170,6 +165,8 @@ public class ServerChatOn {
         private final StringReader stringReader = new StringReader();
         private final ConnectReader connectReader = new ConnectReader();
         private final PublicMessageReader publicMessageReader = new PublicMessageReader();
+        private final FusionInitReader fusionInitReader = new FusionInitReader(8);
+        private final FusionInitReader fusionInitReaderOK = new FusionInitReader(9);
         private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
@@ -203,26 +200,44 @@ public class ServerChatOn {
          *
          */
         private void initFusion() {
-            // check if a merge is being made
+            status = publicMessageReader.process(bufferIn);
+            switch (status) {
+                case DONE -> {
+                    // get packet from Reader
+                    var packet = fusionInitReaderOK.get();
+                    // Test if server == leader
+                    if (leader == null) {
+                        if (!hasServerInCommon(packet.components())) {
+                            var connectedServerName = getListConnectedServer();
+                            var packetFusionInit = new PacketFusionInit(9, name, connectedServer.size(), connectedServerName);
+                            queueMessage(packetFusionInit);
 
-            // Test if server == leader
-            if (leader == null) {
-                // get the list of connected server to the request server
-                List<String> requestServers = getServerListFromBuffer();
-                // Yes, test if both server have a common server
-                if(hasServerInCommon(requestServers)) {
-                    // send packet (9) Fusion_Init_OK
-                    var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer.keySet().stream().toList());
-                    queueMessage(packet);
-                } else {
-                    // send packet (10) Fusion_Init_KO
-                    var packet = new PacketOpcode(10);
-                    queueMessage(packet);
+                            switchLeaderName(packet.GetName());
+
+                            fusion();
+                        } else {
+
+                        }
+                    }
                 }
-            } else {
-                // send packet (11)
+                case REFILL -> logger.info("REFILL");
+
+                case ERROR -> {
+                    logger.info("ERROR");
+                    silentlyClose();
+                }
+            }
+        }
+
+        private void fusion() {
+            if (leader != null) {
 
             }
+        }
+
+        private void switchLeaderName(String serverName) {
+            if ((name.compareTo(serverName) > 0)) leader = this;
+            else leader = null;
         }
 
         private List<String> getServerListFromBuffer() {
@@ -232,12 +247,15 @@ public class ServerChatOn {
             return requestServers;
         }
 
-        private boolean hasServerInCommon(List<ServerSocketChannel> requestServers) {
-            for(var serv : requestServers)
-//                if(connectedServer.contains(serv))
-                    return true;
+        private boolean hasServerInCommon(List<String> requestServers) {
+            for (var serv : requestServers) {
+                var entrySet = connectedServer.entrySet();
+                for (var server : entrySet)
+                    if (server.getKey().equals(serv)) return true;
+            }
             return false;
         }
+
 
         /**
          *
@@ -390,7 +408,6 @@ public class ServerChatOn {
             processOut();
             updateInterestOps();
         }
-
     }
-
 }
+
