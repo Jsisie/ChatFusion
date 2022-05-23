@@ -53,7 +53,8 @@ public class ServerChatOn {
      */
     private boolean IsConnect(String login) {
         for (var client : connectedClients) {
-            if (client.checkIsLogin(login)) return true;
+            if (client.checkIsLogin(login))
+                return true;
         }
         return false;
     }
@@ -207,10 +208,10 @@ public class ServerChatOn {
             // Test if server == leader
             if (leader == null) {
                 // get the list of connected server to the request server
-                List<ServerSocketChannel> requestServers = getServerListFromBuffer();
+                List<String> requestServers = getServerListFromBuffer();
                 // Yes, test if both server have a common server
                 if(hasServerInCommon(requestServers)) {
-                    // send packet (9)
+                    // send packet (9) Fusion_Init_OK
                     var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer.keySet().stream().toList());
                     queueMessage(packet);
                 } else {
@@ -224,8 +225,8 @@ public class ServerChatOn {
             }
         }
 
-        private List<ServerSocketChannel> getServerListFromBuffer() {
-            var requestServers = new ArrayList<ServerSocketChannel>();
+        private List<String> getServerListFromBuffer() {
+            var requestServers = new ArrayList<String>();
 
             // process here the list from the buffer
             return requestServers;

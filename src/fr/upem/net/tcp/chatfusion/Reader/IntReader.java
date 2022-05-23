@@ -3,7 +3,6 @@ package fr.upem.net.tcp.chatfusion.Reader;
 import java.nio.ByteBuffer;
 
 public class IntReader implements Reader<Integer> {
-
     private enum State {DONE, WAITING, ERROR}
     private State state = State.WAITING;
     private final ByteBuffer internalBuffer = ByteBuffer.allocate(Integer.BYTES); // write-mode
