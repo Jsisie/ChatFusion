@@ -1,5 +1,8 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
+import fr.upem.net.tcp.chatfusion.ServerChatOn;
+
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +24,11 @@ public class PacketFusionInit implements Packet {
 
     public String GetName(){
         return  name;
+    }
+
+    // TODO - add sc as parameters ???
+    public SocketAddress getSocketAddress() {
+        return sc;
     }
 
     @Override
