@@ -2,22 +2,23 @@ package fr.upem.net.tcp.chatfusion.Reader;
 
 import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FusionInitReader implements Reader {
+public class FusionInitReader implements Reader<PacketFusionInit> {
 
     private enum State {DONE, WAITING, ERROR}
-
     private FusionInitReader.State state = FusionInitReader.State.WAITING;
     private PacketFusionInit value;
     private String name = "";
+    private InetSocketAddress sc;
     private int nbMember = -1;
     private final List<String> namesMember = new ArrayList<>();
     private final StringReader stringReader = new StringReader();
     private final IntReader intReader = new IntReader();
-    //private SocketAdresse adresse;
+    private final SocketAddressReader socketAddressReader = new SocketAddressReader();
 
     private final int opCode;
 
@@ -45,7 +46,23 @@ public class FusionInitReader implements Reader {
             }
             stringReader.reset();
         }
-//todo reup nbmembre
+        // TODO - get Socket Address
+        if (sc == null) {
+            ProcessStatus status = socketAddressReader.process(bb);
+            switch (status) {
+                case DONE:
+                    sc = (InetSocketAddress) socketAddressReader.get();
+                    break;
+                case REFILL:
+                    return ProcessStatus.REFILL;
+                case ERROR:
+                    state = FusionInitReader.State.ERROR;
+                    return ProcessStatus.ERROR;
+            }
+            socketAddressReader.reset();
+        }
+
+        //todo reup nbmembre
         if (nbMember == -1) {
             ProcessStatus status = intReader.process(bb);
             switch (status) {
