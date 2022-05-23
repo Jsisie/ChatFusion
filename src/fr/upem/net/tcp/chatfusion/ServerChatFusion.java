@@ -20,18 +20,18 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerChatOn {
+public class ServerChatFusion {
 
     private final List<Client> connectedClients = new ArrayList<>();
     private final HashMap<String, Context> connectedServer = new HashMap<>();
     private static final int BUFFER_SIZE = 1_024;
-    private static final Logger logger = Logger.getLogger(ServerChatOn.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerChatFusion.class.getName());
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
     private Context leader;
     private final String name;
 
-    public ServerChatOn(int port, String name) throws IOException {
+    public ServerChatFusion(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.bind(new InetSocketAddress(port));
         // switch server to non-blocking mode
@@ -135,7 +135,7 @@ public class ServerChatOn {
             usage();
             return;
         }
-        new ServerChatOn(Integer.parseInt(args[0]), args[1]).launch();
+        new ServerChatFusion(Integer.parseInt(args[0]), args[1]).launch();
     }
 
     private static void usage() {
@@ -167,13 +167,13 @@ public class ServerChatOn {
         private final PublicMessageReader publicMessageReader = new PublicMessageReader();
         private final FusionInitReader fusionInitReader = new FusionInitReader(8);
         private final FusionInitReader fusionInitReaderOK = new FusionInitReader(9);
-        private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
+        private final ServerChatFusion server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
 
         Reader.ProcessStatus status;
 
-        private Context(ServerChatOn server, SelectionKey key) {
+        private Context(ServerChatFusion server, SelectionKey key) {
             this.key = key;
             this.sc = (SocketChannel) key.channel();
             this.server = server;
@@ -247,13 +247,6 @@ public class ServerChatOn {
         private void switchLeaderName(String serverName) {
             if ((name.compareTo(serverName) > 0)) leader = this;
             else leader = null;
-        }
-
-        private List<String> getServerListFromBuffer() {
-            var requestServers = new ArrayList<String>();
-
-            // process here the list from the buffer
-            return requestServers;
         }
 
         private boolean hasServerInCommon(List<String> requestServers) {

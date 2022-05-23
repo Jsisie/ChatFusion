@@ -1,7 +1,5 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
-import fr.upem.net.tcp.chatfusion.ServerChatOn;
-
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
