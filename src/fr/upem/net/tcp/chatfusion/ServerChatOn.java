@@ -214,7 +214,7 @@ public class ServerChatOn {
 
                             switchLeaderName(packet.GetName());
 
-                            fusion();
+                            fusion(packet);
                         } else {
 
                         }
@@ -229,9 +229,12 @@ public class ServerChatOn {
             }
         }
 
-        private void fusion() {
+        private void fusion(PacketFusionInit packet) {
             if (leader != null) {
-
+                // TODO - send packet 14
+                silentlyClose();
+            } else {
+                connectedServer.put(packet.GetName(), packet.getSocketAddress());
             }
         }
 
