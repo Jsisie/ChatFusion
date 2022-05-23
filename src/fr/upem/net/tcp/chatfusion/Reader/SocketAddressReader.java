@@ -1,10 +1,9 @@
 package fr.upem.net.tcp.chatfusion.Reader;
 
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-public class SocketAddressReader implements Reader {
-
-
+public class SocketAddressReader implements Reader<SocketAddress> {
 
     @Override
     public ProcessStatus process(ByteBuffer bb) {
@@ -12,7 +11,7 @@ public class SocketAddressReader implements Reader {
     }
 
     @Override
-    public Object get() {
+    public SocketAddress get() {
         return null;
     }
 
