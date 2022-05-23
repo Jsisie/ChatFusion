@@ -97,7 +97,7 @@ public class FusionInitReader implements Reader<PacketFusionInit> {
             stringReader.reset();
         }
         state = FusionInitReader.State.DONE;
-        value = new PacketFusionInit(opCode, name, nbMember, namesMember);
+        value = new PacketFusionInit(opCode, name, sc, nbMember, namesMember);
         //stringReader.reset();
         return ProcessStatus.DONE;
     }
