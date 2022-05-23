@@ -1,5 +1,6 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Packet.PacketFusionInit;
 import fr.upem.net.tcp.chatfusion.Packet.PacketOpcode;
 import fr.upem.net.tcp.chatfusion.Reader.ConnectReader;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
@@ -31,6 +32,7 @@ public class ServerChatOn {
 
         private final Charset cs = StandardCharsets.UTF_8;
         private final MessageReader msgReader = new MessageReader();
+
         private final StringReader stringReader = new StringReader();
         private final ConnectReader connectReader = new ConnectReader();
         private final ServerChatOn server; // we could also have Context as an instance class, which would naturally
@@ -87,9 +89,10 @@ public class ServerChatOn {
                 // Yes, test if both server have a common server
                 if(hasServerInCommon(requestServers)) {
                     // send packet (9)
-
+                    var packet = new PacketFusionInit(9, name, connectedServer.size(), connectedServer);
+                    queueMessage(packet);
                 } else {
-                    // send packet (10)
+                    // send packet (10) Fusion_Init_KO
                     var packet = new PacketOpcode(10);
                     queueMessage(packet);
                 }
