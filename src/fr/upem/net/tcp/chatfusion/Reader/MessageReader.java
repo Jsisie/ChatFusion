@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 
 public class MessageReader implements Reader<Message> {
     private enum State {DONE, WAITING, ERROR}
-
     private State state = State.WAITING;
     private Message value;
     String login = "";

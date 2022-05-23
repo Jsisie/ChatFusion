@@ -14,9 +14,9 @@ public class PacketFusionInit implements Packet {
 
     public PacketFusionInit(int opCode, String name, int nbMembers, List<String> members) {
         this.opCode = opCode;
-        this.components = members;
         this.name = name;
         this.nbMembers = nbMembers;
+        this.components = members;
     }
 
     @Override
