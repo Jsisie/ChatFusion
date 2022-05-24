@@ -412,7 +412,6 @@ public class ServerChatFusion {
 
                         // TODO - REMOVE the manual creation of the client ABSOLUTELY
                         connectedClients.add(new Client(login, this));
-//                        connection();
                         System.out.println("CONNECTED CLIENTS : " + connectedClients);
 
                         if (IsConnect(login)) {
@@ -519,12 +518,26 @@ public class ServerChatFusion {
             System.out.println("in processOut");
 
             var previewMsg = queue.peek();
+
+            // TODO - remove debug comments here
+            System.out.println("queue : " + queue);
+            System.out.println("previewMsg: " + previewMsg);
+            System.out.println("previewMsg size: " + previewMsg.size());
+
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {
+                // TODO - remove debug comments here
+                System.out.println("CouCou");
+
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
 
+                // TODO - remove debug comments here
+                System.out.println("fullMsg.parseToByteBuffer(): " + fullMsg.parseToByteBuffer());
+
                 bufferOut.put(fullMsg.parseToByteBuffer());
             }
+            // TODO - remove debug comments here
+            System.out.println("buffer out : " + bufferOut);
         }
 
         /**
