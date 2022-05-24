@@ -249,7 +249,11 @@ public class ServerChatFusion {
 
         @Override
         public String toString() {
-            return "[SocketAddress: " + sc + ", leader: " + leader + "]";
+            try {
+                return "[SocketAddress: " + sc.getRemoteAddress().toString() + ", leader: " + leader + "]";
+            } catch (IOException e) {
+                return "";
+            }
         }
 
         /**
