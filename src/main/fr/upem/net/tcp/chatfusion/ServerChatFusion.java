@@ -273,12 +273,13 @@ public class ServerChatFusion {
          */
         private void processIn() {
             System.out.println("Context - processIn");
+
             for (; ; ) {
+                bufferIn.flip();
                 // TODO - ERROR here, always call switch with the same value for opCode until exception thrown
                 logger.info("DONE");
                 int opCode = bufferIn.getInt();
                 // TODO - REMOVE THE BELOW LINE ABSOLUTELY
-                opCode = 4;
                 // TODO - remove debug comment here
                 System.out.println("\tOPCODE = " + opCode);
                 switch (opCode) {
