@@ -65,14 +65,25 @@ public class ServerChatFusion {
             String[] cmd = msg.split(" ");
             switch(cmd[0]) {
                 case "FUSION" -> {
+                    // TODO - doesn't work, we end up in the IOException
+                    System.out.println("0");
                     try {
+                        System.out.println("In FUSION process (sendCommand())"); // TODO - remove sout() here
                         var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
+                        System.out.println("inetSocketAddress = " + inetSA);
+                        System.out.println("1");
                         var sc = SocketChannel.open();
+                        System.out.println("2");
                         sc.bind(inetSA);
+                        System.out.println("3");
                         sc.configureBlocking(false);
+                        System.out.println("4");
                         var key = sc.register(selector, SelectionKey.OP_CONNECT);
+                        System.out.println("5");
                         var context = new Context(this, key);
+                        System.out.println("6");
                         context.requestFusion();
+                        System.out.println("7");
                     } catch (IOException e) {
                         logger.info("Channel has been closed");
                     }
@@ -97,6 +108,7 @@ public class ServerChatFusion {
     public void launch() throws IOException {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+        this.console.start();
         while (!Thread.interrupted()) {
             Helpers.printKeys(selector); // for debug
             System.out.println("Starting select");
@@ -254,19 +266,25 @@ public class ServerChatFusion {
         }
 
         private void requestFusion() {
-
+            var packetFusionInit = new PacketFusionInit(8, name, socketAddressReader.get(), connectedServer.size(), getListConnectedServer());
+            queueMessage(packetFusionInit);
         }
 
         private void fusionMerge() {
             status = socketAddressReader.process(bufferIn);
             switch (status) {
                 case DONE -> {
-                    var sa = socketAddressReader.get();
-
-                    leader = new Context();
-
-                    var packet = new PacketString(15, name);
-                    leader.queueMessage(packet);
+                    try {
+                        var sa = socketAddressReader.get();
+                        var sc = SocketChannel.open();
+                        sc.bind(sa).configureBlocking(false);
+                        var key = sc.register(selector, SelectionKey.OP_CONNECT);
+                        leader = new Context(this.server, key);
+                        var packet = new PacketString(15, name);
+                        leader.queueMessage(packet);
+                    } catch (IOException e) {
+                        logger.info("Channel has been closed");
+                    }
                 }
                 case REFILL -> logger.info("REFILL");
 
