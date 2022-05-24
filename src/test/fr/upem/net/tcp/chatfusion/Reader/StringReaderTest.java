@@ -35,7 +35,7 @@ class StringReaderTest {
     @Test
     void get() {
         stringReader.process(bb.flip());
-//        assertEquals(msg, stringReader.get());
+        assertEquals(msg, stringReader.get());
     }
 
     @Test
