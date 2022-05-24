@@ -66,24 +66,16 @@ public class ServerChatFusion {
             switch(cmd[0]) {
                 case "FUSION" -> {
                     // TODO - doesn't work, we end up in the IOException
+                    // TODO - remove debug comments here
                     System.out.println("0");
                     try {
-                        System.out.println("In FUSION process (sendCommand())"); // TODO - remove sout() here
                         var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
-                        System.out.println("inetSocketAddress = " + inetSA);
-                        System.out.println("1");
                         var sc = SocketChannel.open();
-                        System.out.println("2");
                         sc.bind(inetSA);
-                        System.out.println("3");
                         sc.configureBlocking(false);
-                        System.out.println("4");
                         var key = sc.register(selector, SelectionKey.OP_CONNECT);
-                        System.out.println("5");
                         var context = new Context(this, key);
-                        System.out.println("6");
                         context.requestFusion();
-                        System.out.println("7");
                     } catch (IOException e) {
                         logger.info("Channel has been closed");
                     }
@@ -170,11 +162,15 @@ public class ServerChatFusion {
      * @param packet Message
      */
     private void broadcast(Packet packet) {
+        // TODO - remove debug comments here
+        System.out.println("inside broadcast");
         var keys = selector.keys();
         for (var key : keys) {
             var attach = key.attachment();
             if (attach == null) continue;
             var context = (Context) attach;
+            // TODO - remove debug comments here
+            System.out.println("Just before queueMessage");
             context.queueMessage(packet);
         }
     }
@@ -190,7 +186,6 @@ public class ServerChatFusion {
             value.queueMessage(packet);
         });
     }
-
 
     private List<String> getListConnectedServer() {
         return connectedServer.keySet().stream().toList();
@@ -214,6 +209,11 @@ public class ServerChatFusion {
     private record Client(String login, Context context) {
         private boolean checkIsLogin(String login) {
             return this.login.equals(login);
+        }
+
+        @Override
+        public String toString() {
+            return login;
         }
     }
 
@@ -254,8 +254,15 @@ public class ServerChatFusion {
          */
         private void processIn() {
             for (; ; ) {
+                // TODO - remove debug comments here
+                System.out.println("\n");
+                // TODO - ERROR here, always call switch with the same value for opCode until exception thrown
                 logger.info("DONE");
                 int opcode = bufferIn.getInt();
+                // TODO - REMOVE THE BELOW LINE ABSOLUTLY
+                opcode = 4;
+                // TODO - remove debug comments here
+                System.out.println("opCode = " + opcode);
                 switch (opcode) {
                     case 0, 1 -> connection();
                     case 4 -> publicMessage();
@@ -368,22 +375,51 @@ public class ServerChatFusion {
          *
          */
         private void publicMessage() {
+            // TODO - remove debug comments here
+            System.out.println("publicMessage()");
             status = publicMessageReader.process(bufferIn);
             switch (status) {
                 case DONE -> {
                     // send buffer to all connected clients
                     var packet = publicMessageReader.get();
+
                     var nameServer = packet.components().get(0);
                     var login = packet.components().get(1);
                     var message = packet.components().get(2);
+
+                    // TODO - REMOVE ALL THE BELOW LINE ABSOLUTELY
+                    nameServer = "ChatFusion";
+                    login = "toto";
+                    // TODO - remove debug comments here
+                    System.out.println("nameServer = " + nameServer);
+                    System.out.println("login = " + login);
+                    System.out.println("message = " + message);
                     Message msg = new Message(login, message);
+                    // TODO - remove debug comments here
+                    System.out.println("before broadcast");
                     if (nameServer.equals(name)) {
+                        // TODO - remove debug comments here
+                        System.out.println("in if");
+
+                        // TODO - REMOVE the manual creation of the client ABSOLUTELY
+                        connectedClients.add(new Client(login, this));
+//                        connection();
+                        System.out.println("CONNECTED CLIENTS : " + connectedClients);
+
                         if (IsConnect(login)) {
+                            // TODO - remove debug comments here
+                            System.out.println("logged in");
                             broadcast(msg);
                         }
+                        // TODO - remove debug comments here
+                        System.out.println("NOT logged in");
                     } else {
+                        // TODO - remove debug comments here
+                        System.out.println("in else");
                         // Test if server == leader
                         if (leader == null) {
+                            // TODO - remove debug comments here
+                            System.out.println("in if 2");
                             // Yes, send to connected server
                             connectedServer.forEach((key, value) -> {
                                 if (!key.equals(name)) {
@@ -392,6 +428,8 @@ public class ServerChatFusion {
                             });
 
                         } else {
+                            // TODO - remove debug comments here
+                            System.out.println("in else 2");
                             // No, send to leader
                             leader.queueMessage(packet);
                         }
@@ -412,18 +450,29 @@ public class ServerChatFusion {
          *
          */
         public void connection() {
-            logger.info("DONE");
-            var packet = connectReader.get();
-            var login = packet.components().get(0);
-            logger.info(login);
-            if (IsConnect(login)) {
-                var packetRefusal = new PacketString(3, new ArrayList<>());
-                queueMessage(packetRefusal);
-            } else {
-                connectedClients.add(new Client(login, this));
-                connectionAccepted(login);
+            status = connectReader.process(bufferIn);
+            switch (status) {
+                case DONE -> {
+                    logger.info("DONE");
+                    var packet = connectReader.get();
+                    var login = packet.components().get(0);
+                    logger.info(login);
+                    if (IsConnect(login)) {
+                        var packetRefusal = new PacketString(3, new ArrayList<>());
+                        queueMessage(packetRefusal);
+                    } else {
+                        connectedClients.add(new Client(login, this));
+                        connectionAccepted(login);
+                    }
+                    connectReader.reset();
+                }
+                case REFILL -> logger.info("REFILL");
+
+                case ERROR -> {
+                    logger.info("ERROR");
+                    silentlyClose();
+                }
             }
-            connectReader.reset();
         }
 
         /**
@@ -442,16 +491,25 @@ public class ServerChatFusion {
          * @param packet Message
          */
         public void queueMessage(Packet packet) {
+            // TODO - remove debug comments here
+            System.out.println("in queueMessage");
+
             queue.add(packet);
             logger.info("" + queue.size());
             processOut();
             updateInterestOps();
+
+            // TODO - remove debug comments here
+            System.out.println("end of queueMessage");
         }
 
         /**
          * Try to fill bufferOut from the message queue
          */
         private void processOut() {
+            // TODO - remove debug comments here
+            System.out.println("in processOut");
+
             var previewMsg = queue.peek();
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {
                 var fullMsg = queue.poll();
@@ -469,6 +527,9 @@ public class ServerChatFusion {
          * It is assumed that process has been called just before updateInterestOps.
          */
         private void updateInterestOps() {
+            // TODO - remove debug comments here
+            System.out.println("in updateInterestOps");
+
             var newInterestOps = 0;
             if (bufferIn.hasRemaining() && !closed) newInterestOps = newInterestOps | SelectionKey.OP_READ;
 
