@@ -5,6 +5,7 @@ import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketOpcode;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
+import fr.upem.net.tcp.chatfusion.Reader.PublicMessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.Reader;
 
 import java.io.IOException;
@@ -82,7 +83,8 @@ public class ClientChat {
                 case "MESSAGE" -> {
                     while (queueOut.size() == CAPACITY) lock.wait();
                     var packet = new PacketString(4, List.of(cmd[1], cmd[2], cmd[3]));
-                    System.out.println("envoyé: " + packet.components());
+                    // TODO - remove this debug comment
+                    System.out.println("BB sent: " + packet.components());
                     queueOut.add(packet);
                     selector.wakeup();
                 }
@@ -293,6 +295,17 @@ public class ClientChat {
         private void doWrite() throws IOException {
             System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
+
+            // TODO - test
+            var reader = new PublicMessageReader();
+            reader.process(bufferOut);
+            var value = reader.get();
+            System.out.println("size: " + value.size());
+            var list = value.components();
+            System.out.println("server" + list.get(0));
+            System.out.println("login" + list.get(1));
+            System.out.println("msg" + list.get(2));
+
             bufferOut.compact();
             updateInterestOps();
         }
