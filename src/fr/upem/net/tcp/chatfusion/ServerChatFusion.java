@@ -209,11 +209,11 @@ public class ServerChatFusion {
          *
          */
         private void initFusion() {
-            status = publicMessageReader.process(bufferIn);
+            status = fusionInitReader.process(bufferIn);
             switch (status) {
                 case DONE -> {
                     // get packet from Reader
-                    var packet = fusionInitReaderOK.get();
+                    var packet = fusionInitReader.get();
                     // Test if actual server == leader
                     if (leader == null) {
                         // Check that both servers doesn't have a similar server linked to themselves
