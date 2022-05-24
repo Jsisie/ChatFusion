@@ -16,7 +16,7 @@ public class PublicMessageReader implements Reader<PacketString> {
 
     @Override
     public ProcessStatus process(ByteBuffer bb) {
-        if (state == PublicMessageReader.State.DONE || state == PublicMessageReader.State.ERROR) {
+        if (state == State.DONE || state == State.ERROR) {
             throw new IllegalStateException();
         }
         if (server.isEmpty()) {
