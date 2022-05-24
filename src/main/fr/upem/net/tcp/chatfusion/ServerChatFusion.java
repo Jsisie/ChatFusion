@@ -10,10 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +24,7 @@ public class ServerChatFusion {
     private final Selector selector;
     private Context leader;
     private final String name;
+    private final Thread console;
 
     public ServerChatFusion(int port, String name) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
@@ -37,7 +35,53 @@ public class ServerChatFusion {
         this.name = name;
         // initialize by default the leader being the server itself
         this.leader = null;
+        this.console = new Thread(this::consoleRun);
     }
+
+    /**
+     * Thread to read command on terminal
+     */
+    private void consoleRun() {
+        try {
+            try (var scanner = new Scanner(System.in)) {
+                while (scanner.hasNextLine()) {
+                    var msg = scanner.nextLine();
+                    sendCommand(msg);
+                }
+            }
+            logger.info("Console thread stopping");
+        } catch (InterruptedException e) {
+            logger.info("Console thread has been interrupted");
+        }
+    }
+
+    /**
+     * Send instructions to the selector via a BlockingQueue and wake it up
+     *
+     * @throws InterruptedException
+     */
+    private void sendCommand(String msg) throws InterruptedException {
+        synchronized (console) {
+            String[] cmd = msg.split(" ");
+            switch(cmd[0]) {
+                case "FUSION" -> {
+                    try {
+                        var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
+                        var sc = SocketChannel.open();
+                        sc.bind(inetSA);
+                        sc.configureBlocking(false);
+                        var key = sc.register(selector, SelectionKey.OP_CONNECT);
+                        var context = new Context(this, key);
+                        context.requestFusion();
+                    } catch (IOException e) {
+                        logger.info("Channel has been closed");
+                    }
+                }
+                default -> System.out.println("Unknown command typed");
+            }
+        }
+    }
+
 
     /**
      * @param login String
@@ -122,15 +166,16 @@ public class ServerChatFusion {
             context.queueMessage(packet);
         }
     }
+
     private void broadcastClient(Packet packet) {
-        for(var client : connectedClients){
+        for (var client : connectedClients) {
             client.context.queueMessage(packet);
         }
     }
 
     private void broadcastServer(Packet packet) {
-        connectedServer.forEach((key, value) ->{
-          value.queueMessage(packet);
+        connectedServer.forEach((key, value) -> {
+            value.queueMessage(packet);
         });
     }
 
@@ -174,6 +219,8 @@ public class ServerChatFusion {
         private final StringReader stringReader = new StringReader();
         private final ConnectReader connectReader = new ConnectReader();
         private final PublicMessageReader publicMessageReader = new PublicMessageReader();
+        private final SocketAddressReader socketAddressReader = new SocketAddressReader();
+
         private final FusionInitReader fusionInitReader = new FusionInitReader(8);
         private final FusionInitReader fusionInitReaderOK = new FusionInitReader(9);
         private final ServerChatFusion server; // we could also have Context as an instance class, which would naturally
@@ -201,6 +248,31 @@ public class ServerChatFusion {
                     case 0, 1 -> connection();
                     case 4 -> publicMessage();
                     case 8 -> initFusion();
+                    case 14 -> fusionMerge();
+                }
+            }
+        }
+
+        private void requestFusion() {
+
+        }
+
+        private void fusionMerge() {
+            status = socketAddressReader.process(bufferIn);
+            switch (status) {
+                case DONE -> {
+                    var sa = socketAddressReader.get();
+
+                    leader = new Context();
+
+                    var packet = new PacketString(15, name);
+                    leader.queueMessage(packet);
+                }
+                case REFILL -> logger.info("REFILL");
+
+                case ERROR -> {
+                    logger.info("ERROR");
+                    silentlyClose();
                 }
             }
         }
@@ -251,7 +323,7 @@ public class ServerChatFusion {
                     leader.sc.getRemoteAddress();
                     var packetChangeLeader = new PacketSocketAddress(14, leader.sc.getRemoteAddress());
                     broadcastServer(packetChangeLeader);
-                    connectedServer.forEach((key, value) ->{
+                    connectedServer.forEach((key, value) -> {
                         value.silentlyClose();
                     });
                 } catch (IOException e) {
@@ -259,7 +331,7 @@ public class ServerChatFusion {
                     return;
                 }
             } else {
-                connectedServer.put(packet.GetName(),this);
+                connectedServer.put(packet.GetName(), this);
             }
         }
 
