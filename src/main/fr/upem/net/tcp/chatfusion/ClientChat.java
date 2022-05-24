@@ -233,6 +233,33 @@ public class ClientChat {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
                 bufferOut.put(fullMsg.parseToByteBuffer().flip());
+
+               bufferOut.flip();
+                // TODO - test
+
+                var opCode = bufferOut.getInt();
+                var serverL = bufferOut.getInt();
+                var limit = bufferOut.limit();
+                bufferOut.limit(bufferOut.position() + serverL);
+                var server = StandardCharsets.UTF_8.decode(bufferOut);
+                bufferOut.limit(limit);
+
+                var loginL = bufferOut.getInt();
+                limit = bufferOut.limit();
+                bufferOut.limit(bufferOut.position() + loginL);
+                var login = StandardCharsets.UTF_8.decode(bufferOut);
+                bufferOut.limit(limit);
+
+                var msgL = bufferOut.getInt();
+                limit = bufferOut.limit();
+                bufferOut.limit(bufferOut.position() + msgL);
+                var msg = StandardCharsets.UTF_8.decode(bufferOut);
+                bufferOut.limit(limit);
+
+                System.out.println("opcode " + opCode);
+                System.out.println("server " + server);
+                System.out.println("login " + login);
+                System.out.println("msg " + msg);
             }
         }
 
@@ -295,17 +322,6 @@ public class ClientChat {
         private void doWrite() throws IOException {
             System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
-
-            // TODO - test
-            var reader = new PublicMessageReader();
-            reader.process(bufferOut);
-            var value = reader.get();
-            System.out.println("size: " + value.size());
-            var list = value.components();
-            System.out.println("server" + list.get(0));
-            System.out.println("login" + list.get(1));
-            System.out.println("msg" + list.get(2));
-
             bufferOut.compact();
             updateInterestOps();
         }

@@ -20,6 +20,7 @@ public class PublicMessageReader implements Reader<PacketString> {
             throw new IllegalStateException();
         }
         if (server.isEmpty()) {
+            System.out.println("server vide = " + server);
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
                 case DONE:
@@ -33,8 +34,9 @@ public class PublicMessageReader implements Reader<PacketString> {
             }
             stringReader.reset();
         }
-
+        System.out.println("server remplit = " + server);
         if (login.isEmpty()) {
+            System.out.println("login vide = " + login);
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
                 case DONE:
@@ -48,7 +50,7 @@ public class PublicMessageReader implements Reader<PacketString> {
             }
             stringReader.reset();
         }
-
+        System.out.println("login vide = " + login);
         if (msg.isEmpty()) {
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
