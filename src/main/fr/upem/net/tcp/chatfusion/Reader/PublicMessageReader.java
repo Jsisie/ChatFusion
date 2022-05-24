@@ -27,8 +27,10 @@ public class PublicMessageReader implements Reader<PacketString> {
                     server = stringReader.get();
                     break;
                 case REFILL:
+                    System.out.println("PM Reader REFILL");
                     return ProcessStatus.REFILL;
                 case ERROR:
+                    System.out.println("PM Reader REFILL");
                     state = PublicMessageReader.State.ERROR;
                     return ProcessStatus.ERROR;
             }

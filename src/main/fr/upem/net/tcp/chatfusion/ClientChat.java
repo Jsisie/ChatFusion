@@ -234,7 +234,7 @@ public class ClientChat {
                 if (fullMsg == null) return;
                 bufferOut.put(fullMsg.parseToByteBuffer().flip());
 
-               bufferOut.flip();
+               /*bufferOut.flip();
                 // TODO - test
 
                 var opCode = bufferOut.getInt();
@@ -259,7 +259,7 @@ public class ClientChat {
                 System.out.println("opcode " + opCode);
                 System.out.println("server " + server);
                 System.out.println("login " + login);
-                System.out.println("msg " + msg);
+                System.out.println("msg " + msg);*/
             }
         }
 
