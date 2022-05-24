@@ -213,7 +213,7 @@ public class ServerChatFusion {
 
         @Override
         public String toString() {
-            return login;
+            return login + ", " + context.toString();
         }
     }
 
@@ -245,6 +245,11 @@ public class ServerChatFusion {
             this.key = key;
             this.sc = (SocketChannel) key.channel();
             this.server = server;
+        }
+
+        @Override
+        public String toString() {
+            return "[SocketAddress: " + sc + ", leader: " + leader + "]";
         }
 
         /**
@@ -426,7 +431,6 @@ public class ServerChatFusion {
                                     value.queueMessage(packet);
                                 }
                             });
-
                         } else {
                             // TODO - remove debug comments here
                             System.out.println("in else 2");
