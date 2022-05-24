@@ -591,6 +591,7 @@ public class ServerChatFusion {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while writing in it
          */
         private void doWrite() throws IOException {
+            System.out.println("coucou write");
             bufferOut.flip();
             sc.write(bufferOut);
             bufferOut.compact();
