@@ -417,7 +417,7 @@ public class ServerChatFusion {
                         if (IsConnect(login)) {
                             // TODO - remove debug comments here
                             System.out.println("logged in");
-                            broadcast(msg);
+                            broadcastClient(msg);
                         }
                         // TODO - remove debug comments here
                         System.out.println("NOT logged in");
