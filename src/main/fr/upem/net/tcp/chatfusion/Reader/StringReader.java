@@ -71,7 +71,7 @@ public class StringReader implements Reader<String> {
             internalBuffer.put(buffer);
         } else {
             var oldLimit = buffer.limit();
-            buffer.limit(internalBuffer.remaining());
+            buffer.limit(buffer.position() + internalBuffer.remaining());
             internalBuffer.put(buffer);
             buffer.limit(oldLimit);
         }
