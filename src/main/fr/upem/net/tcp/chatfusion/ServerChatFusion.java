@@ -236,6 +236,7 @@ public class ServerChatFusion {
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
         private final Charset cs = StandardCharsets.UTF_8;
+        private final IntReader intReader = new IntReader();
         private final MessageReader msgReader = new MessageReader();
         private final StringReader stringReader = new StringReader();
         private final ConnectReader connectReader = new ConnectReader();
@@ -274,36 +275,47 @@ public class ServerChatFusion {
         private void processIn() {
             System.out.println("Context - processIn");
 
-            for (; ; ) {
-                bufferIn.flip();
+            for (;;) {
                 // TODO - ERROR here, always call switch with the same value for opCode until exception thrown
                 logger.info("DONE");
-                int opCode = bufferIn.getInt();
-                // TODO - REMOVE THE BELOW LINE ABSOLUTELY
-                // TODO - remove debug comment here
-                System.out.println("\tOPCODE = " + opCode);
-                switch (opCode) {
-                    // NOpE
-                    case 0, 1 -> {
-                        connection();
-                        return;
+                status = intReader.process(bufferIn);
+                switch (status) {
+                    case DONE -> {
+                        int opCode = intReader.get();
+                        // TODO - REMOVE THE BELOW LINE ABSOLUTELY
+                        // TODO - remove debug comment here
+                        System.out.println("\tOPCODE = " + opCode);
+                        switch (opCode) {
+                            // NOpE
+                            case 0, 1 -> {
+                                connection();
+                                return;
+                            }
+                            // NOPE
+                            case 4 -> {
+                                publicMessage();
+                                return;
+                            }
+                            // NOPE
+                            case 8 -> {
+                                initFusion();
+                                return;
+                            }
+                            // NOPE
+                            case 14 -> {
+                                fusionMerge();
+                                return;
+                            }
+                        }
                     }
-                    // NOPE
-                    case 4 -> {
-                        publicMessage();
-                        return;
-                    }
-                    // NOPE
-                    case 8 -> {
-                        initFusion();
-                        return;
-                    }
-                    // NOPE
-                    case 14 -> {
-                        fusionMerge();
-                        return;
+                    case REFILL -> logger.info("REFILL");
+
+                    case ERROR -> {
+                        logger.info("ERROR");
+                        silentlyClose();
                     }
                 }
+
             }
         }
 
@@ -578,6 +590,7 @@ public class ServerChatFusion {
         private void doRead() throws IOException {
             System.out.println("Context - doRead");
             if (sc.read(bufferIn) == -1) closed = true;
+
             processIn();
             updateInterestOps();
         }

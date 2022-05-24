@@ -25,7 +25,7 @@ public class StringReader implements Reader<String> {
         if (state.equals(State.SIZE)) {
             extractSize(buffer);
         }
-        buffer.flip();
+
         try {
             if (state.equals(State.WAITING)) {
                 extractString(buffer);
@@ -64,14 +64,11 @@ public class StringReader implements Reader<String> {
     }
 
     private void extractString(ByteBuffer buffer) {
-        if (!state.equals(State.WAITING)) {
-            return;
-        }
         if (buffer.remaining() <= internalBuffer.remaining()) {
             internalBuffer.put(buffer);
         } else {
             var oldLimit = buffer.limit();
-            buffer.limit(buffer.position() + internalBuffer.remaining());
+            buffer.limit(internalBuffer.remaining());
             internalBuffer.put(buffer);
             buffer.limit(oldLimit);
         }
