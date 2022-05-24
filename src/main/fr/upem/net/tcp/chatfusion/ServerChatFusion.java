@@ -338,12 +338,9 @@ public class ServerChatFusion {
         private void fusion(PacketFusionInit packet) {
             if (leader != null) {
                 try {
-                    leader.sc.getRemoteAddress();
+                    // Send packet 14
                     var packetChangeLeader = new PacketSocketAddress(14, leader.sc.getRemoteAddress());
-                    broadcastServer(packetChangeLeader);
-                    connectedServer.forEach((key, value) -> {
-                        value.silentlyClose();
-                    });
+                    queueMessage(packetChangeLeader);
                 } catch (IOException e) {
                     logger.info("Channel was closed");
                     return;
