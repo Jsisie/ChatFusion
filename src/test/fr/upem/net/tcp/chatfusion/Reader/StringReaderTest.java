@@ -3,46 +3,89 @@ package fr.upem.net.tcp.chatfusion.Reader;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-class StringReaderTest {
+public class StringReaderTest {
 
-    private final static int BUFFER_SIZE = 10;
-    private final ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
-    private final Charset cs = StandardCharsets.UTF_8;
-    private final String car = "T";
-    private final String msg = "TTTTTTTTTT";
-    private final StringReader stringReader = new StringReader();
-
-    public StringReaderTest() {
-        fillBB();
-    }
-
-    private void fillBB() {
-        IntStream.range(0, BUFFER_SIZE).forEach(__ -> bb.put(cs.encode(car)));
+    @Test
+    public void simple() {
+        var string = "\u20ACa\u20AC";
+        var bb = ByteBuffer.allocate(1024);
+        var bytes = StandardCharsets.UTF_8.encode(string);
+        bb.putInt(bytes.remaining()).put(bytes);
+        StringReader sr = new StringReader();
+        assertEquals(Reader.ProcessStatus.DONE, sr.process(bb));
+        assertEquals(string, sr.get());
+        assertEquals(0, bb.position());
+        assertEquals(bb.capacity(), bb.limit());
     }
 
     @Test
-    void process() {
-        var status = stringReader.process(bb.flip());
-        assertEquals("REFILL", status.toString());
+    public void reset() {
+        var string = "\u20ACa\u20AC";
+        var string2 = "\u20ACa\u20ACabcd";
+        var bb = ByteBuffer.allocate(1024);
+        var bytes = StandardCharsets.UTF_8.encode(string);
+        var bytes2 = StandardCharsets.UTF_8.encode(string2);
+        bb.putInt(bytes.remaining()).put(bytes).putInt(bytes2.remaining()).put(bytes2);
+        StringReader sr = new StringReader();
+        assertEquals(Reader.ProcessStatus.DONE, sr.process(bb));
+        assertEquals(string, sr.get());
+        assertEquals(15, bb.position());
+        assertEquals(bb.capacity(), bb.limit());
+        sr.reset();
+        assertEquals(Reader.ProcessStatus.DONE, sr.process(bb));
+        assertEquals(string2, sr.get());
+        assertEquals(0, bb.position());
+        assertEquals(bb.capacity(), bb.limit());
     }
 
     @Test
-    void get() {
-        stringReader.process(bb.flip());
-        assertEquals(msg, stringReader.get());
+    public void smallBuffer() {
+        var string = "\u20ACa\u20AC";
+        var bb = ByteBuffer.allocate(1024);
+        var bytes = StandardCharsets.UTF_8.encode(string);
+        bb.putInt(bytes.remaining()).put(bytes).flip();
+        var bbSmall = ByteBuffer.allocate(2);
+        var sr = new StringReader();
+        while (bb.hasRemaining()) {
+            while (bb.hasRemaining() && bbSmall.hasRemaining()) {
+                bbSmall.put(bb.get());
+            }
+            if (bb.hasRemaining()) {
+                assertEquals(Reader.ProcessStatus.REFILL, sr.process(bbSmall));
+            } else {
+                assertEquals(Reader.ProcessStatus.DONE, sr.process(bbSmall));
+            }
+        }
+        assertEquals(string, sr.get());
     }
 
     @Test
-    void reset() {
-        stringReader.process(bb.flip());
-        stringReader.reset();
-        assertNull(stringReader.get());
+    public void errorGet() {
+        var sr = new StringReader();
+        assertThrows(IllegalStateException.class, () -> {
+            var res = sr.get();
+        });
+    }
+
+    @Test
+    public void errorNeg() {
+        var sr = new StringReader();
+        var bb = ByteBuffer.allocate(1024);
+        var bytes = StandardCharsets.UTF_8.encode("aaaaa");
+        bb.putInt(-1).put(bytes);
+        assertEquals(Reader.ProcessStatus.ERROR, sr.process(bb));
+    }
+
+    @Test
+    public void errorTooBig() {
+        var sr = new StringReader();
+        var bb = ByteBuffer.allocate(1024);
+        var bytes = StandardCharsets.UTF_8.encode("aaaaa");
+        bb.putInt(1025).put(bytes);
+        assertEquals(Reader.ProcessStatus.ERROR, sr.process(bb));
     }
 }
