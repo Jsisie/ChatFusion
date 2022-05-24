@@ -82,6 +82,7 @@ public class ClientChat {
                 case "MESSAGE" -> {
                     while (queueOut.size() == CAPACITY) lock.wait();
                     var packet = new PacketString(4, List.of(cmd[1], cmd[2], cmd[3]));
+                    System.out.println("envoyé: " + packet.components());
                     queueOut.add(packet);
                     selector.wakeup();
                 }

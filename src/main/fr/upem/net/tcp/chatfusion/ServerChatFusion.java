@@ -422,7 +422,7 @@ public class ServerChatFusion {
                 case DONE -> {
                     // send buffer to all connected clients
                     var packet = publicMessageReader.get();
-
+                    System.out.println("reçut: " + packet.components());
                     var nameServer = packet.components().get(0);
                     var login = packet.components().get(1);
                     var message = packet.components().get(2);
