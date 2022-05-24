@@ -68,9 +68,6 @@ public class ServerChatFusion {
             String[] cmd = msg.split(" ");
             switch(cmd[0]) {
                 case "FUSION" -> {
-                    // TODO - doesn't work, we end up in the IOException
-                    // TODO - remove debug comments here
-                    System.out.println("0");
                     try {
                         var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
                         var sc = SocketChannel.open();
@@ -102,7 +99,6 @@ public class ServerChatFusion {
     }
 
     public void launch() throws IOException {
-        // TODO - remove debug comments here
         System.out.println("launch");
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -130,7 +126,6 @@ public class ServerChatFusion {
             throw new UncheckedIOException(ioe);
         }
         try {
-            // TODO - added this for doConnect()
             if (key.isValid() && key.isConnectable()) {
                 ((Context) key.attachment()).doConnect();
             }
@@ -283,14 +278,16 @@ public class ServerChatFusion {
                 logger.info("DONE");
                 int opCode = bufferIn.getInt();
                 // TODO - REMOVE THE BELOW LINE ABSOLUTELY
-                opCode = 0;
+                opCode = 4;
+                // TODO - remove debug comment here
+                System.out.println("\tOPCODE = " + opCode);
                 switch (opCode) {
-                    // SHOULD WORK (COULDN'T REALLY TEST WITHOUT PROPER CLIENT)
+                    // NOpE
                     case 0, 1 -> {
                         connection();
                         return;
                     }
-                    // WORKS
+                    // NOPE
                     case 4 -> {
                         publicMessage();
                         return;
@@ -324,7 +321,8 @@ public class ServerChatFusion {
                         var sa = socketAddressReader.get();
                         var sc = SocketChannel.open();
                         sc.bind(sa).configureBlocking(false);
-                        var key = sc.register(selector, SelectionKey.OP_CONNECT); // TODO - pas sur de ca..
+                        // TODO - not sure about below line
+                        var key = sc.register(selector, SelectionKey.OP_CONNECT);
                         leader = new Context(this.server, key);
                         var packet = new PacketString(15, name);
                         leader.queueMessage(packet);
@@ -430,15 +428,15 @@ public class ServerChatFusion {
                     var message = packet.components().get(2);
 
 //                    // TODO - REMOVE ALL THE BELOW LINE ABSOLUTELY
-//                    nameServer = "ChatFusion";
-//                    login = "toto";
+                    nameServer = "ChatFusion";
+                    login = "toto";
 
                     Message msg = new Message(login, message);
 
                     if (nameServer.equals(name)) {
 
 //                        // TODO - REMOVE the manual creation of the client ABSOLUTELY
-//                        connectedClients.add(new Client(login, this));
+                        connectedClients.add(new Client(login, this));
 
                         if (isConnect(login)) {
                             broadcast(msg);
@@ -533,7 +531,7 @@ public class ServerChatFusion {
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
-                bufferOut.put( fullMsg.parseToByteBuffer().flip());
+                bufferOut.put(fullMsg.parseToByteBuffer().flip());
             }
         }
 
@@ -546,17 +544,17 @@ public class ServerChatFusion {
          */
         private void updateInterestOps() {
             System.out.println("Context - updateInterestOps");
-            var newInterestOps = 0;
+            var ops = 0;
             if (bufferIn.hasRemaining() && !closed)
-                newInterestOps = newInterestOps | SelectionKey.OP_READ;
+                ops |= SelectionKey.OP_READ;
 
             if (bufferOut.position() != 0)
-                newInterestOps = newInterestOps | SelectionKey.OP_WRITE;
+                ops |= SelectionKey.OP_WRITE;
 
-            if (newInterestOps == 0)
+            if (ops == 0)
                 silentlyClose();
             else
-                key.interestOps(newInterestOps);
+                key.interestOps(ops);
         }
 
         private void silentlyClose() {
@@ -602,8 +600,6 @@ public class ServerChatFusion {
 
         public void doConnect() throws IOException {
             System.out.println("Context - doConnect");
-
-            // TODO - Below is the same code as the ClientChat
             if (!sc.finishConnect()) {
                 logger.warning("Bad thing happened");
                 return;

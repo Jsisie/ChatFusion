@@ -23,7 +23,7 @@ public class PublicMessageReader implements Reader<PacketString> {
             ProcessStatus status = stringReader.process(bb);
             switch (status) {
                 case DONE:
-                    login = stringReader.get();
+                    server = stringReader.get();
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
