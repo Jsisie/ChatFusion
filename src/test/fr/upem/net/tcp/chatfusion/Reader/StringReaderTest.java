@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class StringReaderTest {
 
@@ -42,6 +43,6 @@ class StringReaderTest {
     void reset() {
         stringReader.process(bb.flip());
         stringReader.reset();
-        assertEquals(null,stringReader.get());
+        assertNull(stringReader.get());
     }
 }
