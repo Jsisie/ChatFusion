@@ -19,7 +19,6 @@ public class ClientChat {
 
     static private final int BUFFER_SIZE = 10_000;
     static private final Logger logger = Logger.getLogger(ClientChat.class.getName());
-
     private final SocketChannel sc;
     private final Selector selector;
     private final InetSocketAddress serverAddress;
