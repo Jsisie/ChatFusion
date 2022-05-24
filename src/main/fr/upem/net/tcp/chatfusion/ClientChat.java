@@ -30,6 +30,8 @@ public class ClientChat {
     private final ArrayDeque<Message> queueOut = new ArrayDeque<>(CAPACITY);
 
     public ClientChat(String login, InetSocketAddress serverAddress) throws IOException {
+        // TODO - remove debug comments here
+        System.out.println("Constructor");
         this.serverAddress = serverAddress;
         this.login = login;
         this.sc = SocketChannel.open();
@@ -41,6 +43,8 @@ public class ClientChat {
      * Thread to read command on terminal
      */
     private void consoleRun() {
+        // TODO - remove debug comments here
+        System.out.println("consoleRun");
         try {
             try (var scanner = new Scanner(System.in)) {
                 while (scanner.hasNextLine()) {
@@ -60,6 +64,8 @@ public class ClientChat {
      * @throws InterruptedException
      */
     private void sendCommand(String msg) throws InterruptedException {
+        // TODO - remove debug comments here
+        System.out.println("SendCommand");
         synchronized (lock) {
             while (queueOut.size() == CAPACITY) lock.wait();
             queueOut.add(new Message(login, msg));
@@ -71,6 +77,8 @@ public class ClientChat {
      * Processes the command from the BlockingQueue
      */
     private void processCommands() {
+        // TODO - remove debug comments here
+        System.out.println("processCommand");
         synchronized (lock) {
             if (queueOut.isEmpty()) return;
             var message = (Message) queueOut.pop();
@@ -80,6 +88,8 @@ public class ClientChat {
     }
 
     public void launch() throws IOException {
+        // TODO - remove debug comments here
+        System.out.println("launch");
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
         uniqueContext = new Context(key);
@@ -98,6 +108,8 @@ public class ClientChat {
     }
 
     private void treatKey(SelectionKey key) {
+        // TODO - remove debug comments here
+        System.out.println("treatKey");
         try {
             if (key.isValid() && key.isConnectable()) {
                 uniqueContext.doConnect();
@@ -115,6 +127,8 @@ public class ClientChat {
     }
 
     private void silentlyClose(SelectionKey key) {
+        // TODO - remove debug comments here
+        System.out.println("silentlyClose");
         Channel sc = key.channel();
         try {
             sc.close();
@@ -124,6 +138,8 @@ public class ClientChat {
     }
 
     public static void main(String[] args) throws NumberFormatException, IOException {
+        // TODO - remove debug comments here
+        System.out.println("main");
         if (args.length != 3) {
             usage();
             return;
@@ -150,6 +166,8 @@ public class ClientChat {
         private final MessageReader msgReader = new MessageReader();
 
         private Context(SelectionKey key) {
+            // TODO - remove debug comments here
+            System.out.println("Context.constructor");
             this.key = key;
             this.sc = (SocketChannel) key.channel();
         }
@@ -161,6 +179,8 @@ public class ClientChat {
          * and after the call
          */
         private void processIn() {
+            // TODO - remove debug comments here
+            System.out.println("Context.processIn");
             for (; ; ) {
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
@@ -185,6 +205,8 @@ public class ClientChat {
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          */
         private void queueMessage(Message msg) {
+            // TODO - remove debug comments here
+            System.out.println("Context.queueMessage");
             queue.add(msg);
             processOut();
             updateInterestOps();
@@ -194,6 +216,8 @@ public class ClientChat {
          * Try to fill bufferOut from the message queue
          */
         private void processOut() {
+            // TODO - remove debug comments here
+            System.out.println("Context.processOut");
             while (!queue.isEmpty()) {
                 var val = queue.peek(); // take the value without removing it from the queue
                 var bufferLogin = cs.encode(val.login());
@@ -215,6 +239,8 @@ public class ClientChat {
          * been be called just before updateInterestOps.
          */
         private void updateInterestOps() {
+            // TODO - remove debug comments here
+            System.out.println("Context.updateInterestOps");
             int ops = 0;
 
             if (!closed && bufferIn.hasRemaining()) ops |= SelectionKey.OP_READ;
@@ -226,6 +252,8 @@ public class ClientChat {
         }
 
         private void silentlyClose() {
+            // TODO - remove debug comments here
+            System.out.println("Context.silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {
@@ -242,6 +270,8 @@ public class ClientChat {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
+            // TODO - remove debug comments here
+            System.out.println("Context.doRead");
             if (sc.read(bufferIn) == -1) // read() returns -1 when connection closed
                 closed = true;
             processIn();
@@ -256,12 +286,16 @@ public class ClientChat {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doWrite() throws IOException {
+            // TODO - remove debug comments here
+            System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
             bufferOut.compact();
             updateInterestOps();
         }
 
         public void doConnect() throws IOException {
+            // TODO - remove debug comments here
+            System.out.println("Context.doConnect");
             if (!sc.finishConnect()) {
                 logger.warning("Bad thing happened");
                 return;

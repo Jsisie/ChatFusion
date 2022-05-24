@@ -98,6 +98,8 @@ public class ServerChatFusion {
     }
 
     public void launch() throws IOException {
+        // TODO - remove debug comments here
+        System.out.println("LAUNCH()");
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         this.console.start();
@@ -114,6 +116,8 @@ public class ServerChatFusion {
     }
 
     private void treatKey(SelectionKey key) {
+        // TODO - remove debug comments here
+        System.out.println("TREAT_KEY()");
         Helpers.printSelectedKey(key); // for debug
         try {
             if (key.isValid() && key.isAcceptable()) {
@@ -124,6 +128,10 @@ public class ServerChatFusion {
             throw new UncheckedIOException(ioe);
         }
         try {
+            // TODO - added this for doConnect()
+            if (key.isValid() && key.isConnectable()) {
+                ((Context) key.attachment()).doConnect();
+            }
             if (key.isValid() && key.isWritable()) {
                 ((Context) key.attachment()).doWrite();
             }
@@ -417,7 +425,7 @@ public class ServerChatFusion {
                         if (IsConnect(login)) {
                             // TODO - remove debug comments here
                             System.out.println("logged in");
-                            broadcastClient(msg);
+                            broadcast(msg);
                         }
                         // TODO - remove debug comments here
                         System.out.println("NOT logged in");
@@ -534,7 +542,10 @@ public class ServerChatFusion {
                 // TODO - remove debug comments here
                 System.out.println("fullMsg.parseToByteBuffer(): " + fullMsg.parseToByteBuffer());
 
-                bufferOut.put(fullMsg.parseToByteBuffer());
+                bufferOut.put( fullMsg.parseToByteBuffer().flip());
+
+                // TODO - remove debug comments here
+                System.out.println("BufferOut position: " + bufferOut.position());
             }
             // TODO - remove debug comments here
             System.out.println("buffer out : " + bufferOut);
@@ -552,15 +563,26 @@ public class ServerChatFusion {
             System.out.println("in updateInterestOps");
 
             var newInterestOps = 0;
-            if (bufferIn.hasRemaining() && !closed) newInterestOps = newInterestOps | SelectionKey.OP_READ;
+            if (bufferIn.hasRemaining() && !closed) {
+                // TODO - remove debug comments here
+                System.out.println("GO OP_READ");
+                newInterestOps = newInterestOps | SelectionKey.OP_READ;
+            }
 
-            if (bufferOut.position() != 0) newInterestOps = newInterestOps | SelectionKey.OP_WRITE;
+            if (bufferOut.position() != 0) {
+                // TODO - remove debug comments here
+                System.out.println("GO OP_WRITE");
+                newInterestOps = newInterestOps | SelectionKey.OP_WRITE;
+            }
 
+            System.out.println("newInterestOps = " + newInterestOps);
             if (newInterestOps == 0) silentlyClose();
             else key.interestOps(newInterestOps);
         }
 
         private void silentlyClose() {
+            // TODO - remove debug comments here
+            System.out.println("silentlyClose()");
             try {
                 sc.close();
             } catch (IOException e) {
@@ -577,6 +599,8 @@ public class ServerChatFusion {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
+            // TODO - remove debug comments here
+            System.out.println("Do Read");
             if (sc.read(bufferIn) == -1) closed = true;
             processIn();
             updateInterestOps();
@@ -591,11 +615,24 @@ public class ServerChatFusion {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while writing in it
          */
         private void doWrite() throws IOException {
-            System.out.println("coucou write");
+            // TODO - remove debug comments here
+            System.out.println("Do Write");
             bufferOut.flip();
             sc.write(bufferOut);
             bufferOut.compact();
             processOut();
+            updateInterestOps();
+        }
+
+        public void doConnect() throws IOException {
+            // TODO - remove debug comments here
+            System.out.println("Context.doConnect");
+
+            // TODO - Below is the same code as the ClientChat
+            if (!sc.finishConnect()) {
+                logger.warning("Bad thing happened");
+                return;
+            }
             updateInterestOps();
         }
     }
