@@ -7,34 +7,38 @@ import java.util.function.Predicate;
 
 public class StringReader implements Reader<String> {
 
-    private enum State {DONE, WAITING, ERROR, SIZE}
+    private enum State {
+        DONE, WAITING, ERROR, SIZE
+    };
 
     private State state = State.SIZE;
     private final int BUFFER_SIZE = 1024;
     private final IntReader intReader = new IntReader();
-    private final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-    private final Charset cs = StandardCharsets.UTF_8;
+    private ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);;
+    private final Charset UTF8 = StandardCharsets.UTF_8;
     private final Predicate<Integer> isValidSize = (Integer number) -> number > 0 && number <= BUFFER_SIZE;
     private String value;
+    private int size;
+
 
     @Override
     public ProcessStatus process(ByteBuffer buffer) {
         if (state == State.DONE || state == State.ERROR) {
             throw new IllegalStateException();
         }
-        if (state.equals(State.SIZE)) {
+        if(state.equals(State.SIZE)) {
             extractSize(buffer);
         }
-
+        buffer.flip();
         try {
-            if (state.equals(State.WAITING)) {
+            if(state.equals(State.WAITING)) {
                 extractString(buffer);
             }
         } finally {
             buffer.compact();
         }
 
-        if (state.equals(State.ERROR)) {
+        if(state.equals(State.ERROR)) {
             return ProcessStatus.ERROR;
         }
 
@@ -43,27 +47,32 @@ public class StringReader implements Reader<String> {
         }
         state = State.DONE;
         internalBuffer.flip();
-        value = cs.decode(internalBuffer).toString();
+        value = UTF8.decode(internalBuffer).toString();
         return ProcessStatus.DONE;
     }
 
     private void extractSize(ByteBuffer buffer) {
-        var intState = intReader.process(buffer);
+        var intState =  intReader.process(buffer);
 
-        if (intState.equals(ProcessStatus.DONE)) {
-            var size = intReader.get();
-            if (!isValidSize.test(size)) {
+        if(intState.equals(ProcessStatus.DONE)) {
+            size = intReader.get();
+            if(!isValidSize.test(size)) {
                 state = State.ERROR;
                 return;
             }
             state = State.WAITING;
             internalBuffer.limit(size);
-        } else if (intState.equals(ProcessStatus.ERROR)) {
+        } else if(intState.equals(ProcessStatus.ERROR)) {
             state = State.ERROR;
         }
+
     }
 
+
     private void extractString(ByteBuffer buffer) {
+        if(!state.equals(State.WAITING)) {
+            return;
+        }
         if (buffer.remaining() <= internalBuffer.remaining()) {
             internalBuffer.put(buffer);
         } else {
@@ -76,7 +85,10 @@ public class StringReader implements Reader<String> {
 
     @Override
     public String get() {
-        if (state != State.DONE) throw new IllegalStateException();
+        if (state != State.DONE) {
+            throw new IllegalStateException();
+        }
+
         return value;
     }
 
