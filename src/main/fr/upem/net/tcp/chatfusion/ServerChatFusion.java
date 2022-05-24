@@ -283,20 +283,24 @@ public class ServerChatFusion {
                 logger.info("DONE");
                 int opCode = bufferIn.getInt();
                 // TODO - REMOVE THE BELOW LINE ABSOLUTELY
-                opCode = 4;
+                opCode = 0;
                 switch (opCode) {
+                    // SHOULD WORK (COULDN'T REALLY TEST WITHOUT PROPER CLIENT)
                     case 0, 1 -> {
                         connection();
                         return;
                     }
+                    // WORKS
                     case 4 -> {
                         publicMessage();
                         return;
                     }
+                    // NOPE
                     case 8 -> {
                         initFusion();
                         return;
                     }
+                    // NOPE
                     case 14 -> {
                         fusionMerge();
                         return;
@@ -425,16 +429,16 @@ public class ServerChatFusion {
                     var login = packet.components().get(1);
                     var message = packet.components().get(2);
 
-                    // TODO - REMOVE ALL THE BELOW LINE ABSOLUTELY
-                    nameServer = "ChatFusion";
-                    login = "toto";
+//                    // TODO - REMOVE ALL THE BELOW LINE ABSOLUTELY
+//                    nameServer = "ChatFusion";
+//                    login = "toto";
 
                     Message msg = new Message(login, message);
 
                     if (nameServer.equals(name)) {
 
-                        // TODO - REMOVE the manual creation of the client ABSOLUTELY
-                        connectedClients.add(new Client(login, this));
+//                        // TODO - REMOVE the manual creation of the client ABSOLUTELY
+//                        connectedClients.add(new Client(login, this));
 
                         if (isConnect(login)) {
                             broadcast(msg);
@@ -477,6 +481,7 @@ public class ServerChatFusion {
                     var packet = connectReader.get();
                     var login = packet.components().get(0);
                     logger.info(login);
+
                     if (isConnect(login)) {
                         var packetRefusal = new PacketString(3, new ArrayList<>());
                         queueMessage(packetRefusal);
