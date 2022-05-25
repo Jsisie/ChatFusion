@@ -7,14 +7,11 @@ import java.util.function.Predicate;
 
 public class StringReader implements Reader<String> {
 
-    private enum State {
-        DONE, WAITING, ERROR, SIZE
-    };
-
+    private enum State { DONE, WAITING, ERROR, SIZE }
     private State state = State.SIZE;
     private final int BUFFER_SIZE = 1024;
     private final IntReader intReader = new IntReader();
-    private ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);;
+    private final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     private final Charset UTF8 = StandardCharsets.UTF_8;
     private final Predicate<Integer> isValidSize = (Integer number) -> number > 0 && number <= BUFFER_SIZE;
     private String value;
