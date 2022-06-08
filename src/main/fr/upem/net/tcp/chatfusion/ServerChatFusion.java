@@ -84,7 +84,7 @@ public class ServerChatFusion {
                         logger.info("Channel has been closed");
                     }
                 }
-                case "INFO" -> System.out.println(connectedClients);
+                case "INFO" -> System.out.println(connectedClients.keySet());
 
                 default -> System.out.println("Unknown command typed");
             }
@@ -274,30 +274,27 @@ public class ServerChatFusion {
          * before the call to process and after the call
          */
         private void processIn() {
-//            System.out.println("Context - processIn");
+            System.out.println("Context - processIn");
             for (; ; ) {
+                System.out.println("IN FOR(;;)");
                 status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
                         logger.info("DONE");
                         packet = packetReader.get();
                         switch (packet.opCodeGet()) {
-                            // NOpE
                             case 0, 1 -> {
                                 connection();
                                 return;
                             }
-                            // NOPE
                             case 4 -> {
                                 publicMessage();
                                 return;
                             }
-                            // NOPE
                             case 8 -> {
                                 initFusion();
                                 return;
                             }
-                            // NOPE
                             case 14 -> {
                                 fusionMerge();
                                 return;
@@ -305,7 +302,10 @@ public class ServerChatFusion {
                         }
                         packetReader.reset();
                     }
-                    case REFILL -> logger.info("REFILL");
+                    case REFILL -> {
+                        logger.info("REFILL");
+                        return;
+                    }
 
                     case ERROR -> {
                         logger.info("ERROR");
