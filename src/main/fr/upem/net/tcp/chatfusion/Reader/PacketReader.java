@@ -24,14 +24,14 @@ public class PacketReader implements Reader<Packet> {
         }
         ProcessStatus status = intReader.process(bb);
         switch (status) {
-            case DONE:
-                opCode = intReader.get();
-                break;
-            case REFILL:
+            case DONE -> opCode = intReader.get();
+            case REFILL -> {
                 return ProcessStatus.REFILL;
-            case ERROR:
+            }
+            case ERROR -> {
                 state = State.ERROR;
                 return ProcessStatus.ERROR;
+            }
         }
         intReader.reset();
 
@@ -39,28 +39,28 @@ public class PacketReader implements Reader<Packet> {
             case 0, 1 -> {
                 status = connectReader.process(bb);
                 switch (status) {
-                    case DONE:
-                        packet = connectReader.get();
-                        break;
-                    case REFILL:
+                    case DONE -> packet = connectReader.get();
+                    case REFILL -> {
                         return ProcessStatus.REFILL;
-                    case ERROR:
+                    }
+                    case ERROR -> {
                         state = State.ERROR;
                         return ProcessStatus.ERROR;
+                    }
                 }
                 connectReader.reset();
             }
             case 4 -> {
                 status = publicMessageReader.process(bb);
                 switch (status) {
-                    case DONE:
-                        // send buffer to all connected clients
-                        packet = publicMessageReader.get();
-                    case REFILL:
+                    case DONE -> packet = publicMessageReader.get();
+                    case REFILL -> {
                         return ProcessStatus.REFILL;
-                    case ERROR:
+                    }
+                    case ERROR -> {
                         state = State.ERROR;
                         return ProcessStatus.ERROR;
+                    }
                 }
                 publicMessageReader.reset();
             }
