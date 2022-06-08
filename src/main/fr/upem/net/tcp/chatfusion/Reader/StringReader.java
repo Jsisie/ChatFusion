@@ -17,7 +17,6 @@ public class StringReader implements Reader<String> {
     private String value;
     private int size;
 
-
     @Override
     public ProcessStatus process(ByteBuffer buffer) {
         if (state == State.DONE || state == State.ERROR) {
@@ -62,9 +61,7 @@ public class StringReader implements Reader<String> {
         } else if(intState.equals(ProcessStatus.ERROR)) {
             state = State.ERROR;
         }
-
     }
-
 
     private void extractString(ByteBuffer buffer) {
         if(!state.equals(State.WAITING)) {
@@ -85,7 +82,6 @@ public class StringReader implements Reader<String> {
         if (state != State.DONE) {
             throw new IllegalStateException();
         }
-
         return value;
     }
 

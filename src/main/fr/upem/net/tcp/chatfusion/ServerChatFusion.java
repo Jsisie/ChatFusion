@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class ServerChatFusion {
 
-    private final List<Client> connectedClients = new ArrayList<>();
+    private final HashMap<Client, Context> connectedClients = new HashMap<>();
     private final HashMap<String, Context> connectedServer = new HashMap<>();
     private static final int BUFFER_SIZE = 1_024;
     private static final Logger logger = Logger.getLogger(ServerChatFusion.class.getName());
@@ -97,7 +97,7 @@ public class ServerChatFusion {
      */
     private boolean isConnect(String login) {
 //        System.out.println("isConnect");
-        for (var client : connectedClients) {
+        for (var client : connectedClients.keySet()) {
             if (client.checkIsLogin(login)) return true;
         }
         return false;
@@ -186,7 +186,7 @@ public class ServerChatFusion {
 
     private void broadcastClient(Packet packet) {
 //        System.out.println("broadcastClient");
-        for (var client : connectedClients) {
+        for (var client : connectedClients.keySet()) {
             client.context.queueMessage(packet);
         }
     }
@@ -481,7 +481,7 @@ public class ServerChatFusion {
                         var packetRefusal = new PacketString(3, new ArrayList<>());
                         queueMessage(packetRefusal);
                     } else {
-                        connectedClients.add(new Client(login, this));
+                        connectedClients.put(new Client(login, this), this);
                         connectionAccepted(login);
                     }
                     connectReader.reset();
