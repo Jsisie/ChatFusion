@@ -18,8 +18,7 @@ public class PacketString implements Packet {
     }
 
     public PacketString(int opCode, String list) {
-        this.opCode = opCode;
-        this.components = List.of(list);
+        this(opCode, List.of(list));
     }
 
     @Override

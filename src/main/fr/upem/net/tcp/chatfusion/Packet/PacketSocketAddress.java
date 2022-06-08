@@ -7,16 +7,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public class PacketSocketAddress implements Packet {
+public record PacketSocketAddress(int opCode, SocketAddress sa) implements Packet {
 
-    private final int opCode;
-    private final SocketAddress sa;
-    private final Charset cs = StandardCharsets.UTF_8;
-
-    public PacketSocketAddress(int opCode, SocketAddress sa) {
-        this.opCode = opCode;
-        this.sa = sa;
-    }
+    private static final Charset cs = StandardCharsets.UTF_8;
 
     @Override
     public int opCodeGet() {

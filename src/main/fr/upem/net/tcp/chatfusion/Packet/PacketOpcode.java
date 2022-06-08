@@ -3,13 +3,7 @@ package fr.upem.net.tcp.chatfusion.Packet;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class PacketOpcode implements Packet {
-
-    private final int opCode;
-
-    public PacketOpcode(int opCode) {
-        this.opCode = opCode;
-    }
+public record PacketOpcode (int opCode) implements Packet {
 
     @Override
     public int opCodeGet() {
