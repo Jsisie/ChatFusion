@@ -6,6 +6,7 @@ import fr.upem.net.tcp.chatfusion.Reader.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
@@ -78,7 +79,7 @@ public class ServerChatFusion {
 
                         var key = sc.register(selector, SelectionKey.OP_CONNECT);
                         var context = new Context(this, key);
-                        context.requestFusion();
+                        context.requestFusion(inetSA);
                     } catch (IOException e) {
                         logger.info("Channel has been closed");
                     }
@@ -242,15 +243,12 @@ public class ServerChatFusion {
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
         private final Charset cs = StandardCharsets.UTF_8;
-        private final ConnectReader connectReader = new ConnectReader();
-        private final PublicMessageReader publicMessageReader = new PublicMessageReader();
-        private final SocketAddressReader socketAddressReader = new SocketAddressReader();
-
-        private final FusionInitReader fusionInitReader = new FusionInitReader(8);
+        private final PacketReader packetReader = new PacketReader();
         private final FusionInitReader fusionInitReaderOK = new FusionInitReader(9);
         private final ServerChatFusion server; // we could also have Context as an instance class, which would naturally
         // give access to ServerChatInt.this
         private boolean closed = false;
+        private Packet packet;
 
         Reader.ProcessStatus status;
 
@@ -278,64 +276,65 @@ public class ServerChatFusion {
         private void processIn() {
 //            System.out.println("Context - processIn");
             for (; ; ) {
-//                bufferIn.flip();
-                logger.info("DONE");
-                int opCode = bufferIn.getInt();
-                switch (opCode) {
-                    // NOpE
-                    case 0, 1 -> {
-                        connection();
-                        return;
+                status = packetReader.process(bufferIn);
+                switch (status) {
+                    case DONE -> {
+                        logger.info("DONE");
+                        packet = packetReader.get();
+                        switch (packet.opCodeGet()) {
+                            // NOpE
+                            case 0, 1 -> {
+                                connection();
+                                return;
+                            }
+                            // NOPE
+                            case 4 -> {
+                                publicMessage();
+                                return;
+                            }
+                            // NOPE
+                            case 8 -> {
+                                initFusion();
+                                return;
+                            }
+                            // NOPE
+                            case 14 -> {
+                                fusionMerge();
+                                return;
+                            }
+                        }
+                        packetReader.reset();
                     }
-                    // NOPE
-                    case 4 -> {
-                        publicMessage();
-                        return;
-                    }
-                    // NOPE
-                    case 8 -> {
-                        initFusion();
-                        return;
-                    }
-                    // NOPE
-                    case 14 -> {
-                        fusionMerge();
-                        return;
+                    case REFILL -> logger.info("REFILL");
+
+                    case ERROR -> {
+                        logger.info("ERROR");
+                        silentlyClose();
                     }
                 }
             }
         }
 
-        private void requestFusion() {
+        private void requestFusion(SocketAddress sa) {
 //            System.out.println("Context - requestFusion");
-            var packetFusionInit = new PacketFusionInit(8, name, socketAddressReader.get(), connectedServer.size(), getListConnectedServer());
+            var packetFusionInit = new PacketFusionInit(8, name, sa, connectedServer.size(), getListConnectedServer());
             queueMessage(packetFusionInit);
         }
 
         private void fusionMerge() {
 //            System.out.println("Context - fusionMerge");
-            status = socketAddressReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    try {
-                        var sa = socketAddressReader.get();
-                        var sc = SocketChannel.open();
-                        sc.bind(sa).configureBlocking(false);
-                        var key = sc.register(selector, SelectionKey.OP_CONNECT);
-                        leader = new Context(this.server, key);
-                        var packet = new PacketString(15, name);
-                        leader.queueMessage(packet);
-                    } catch (IOException e) {
-                        logger.info("Channel has been closed");
-                    }
-                }
-                case REFILL -> logger.info("REFILL");
-
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
-                }
+            try {
+                SocketAddress sa = (SocketAddress) packet.components().get(0);
+                var sc = SocketChannel.open();
+                sc.bind(sa).configureBlocking(false);
+                var key = sc.register(selector, SelectionKey.OP_CONNECT);
+                leader = new Context(this.server, key);
+                var packet = new PacketString(15, name);
+                leader.queueMessage(packet);
+            } catch (IOException e) {
+                logger.info("Channel has been closed");
             }
+
         }
 
         /**
@@ -343,43 +342,31 @@ public class ServerChatFusion {
          */
         private void initFusion() {
 //            System.out.println("Context - initFusion");
-            status = fusionInitReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    // get packet from Reader
-                    var packet = fusionInitReader.get();
-                    // Test if actual server == leader
-                    if (leader == null) {
-                        // Check that both servers doesn't have a similar server linked to themselves
-                        if (!hasServerInCommon(packet.components())) {
-                            try {
-                                var connectedServerName = getListConnectedServer();
-                                var socketAddress = sc.getLocalAddress();
-                                var packetFusionInit = new PacketFusionInit(9, name, socketAddress, connectedServer.size(), connectedServerName);
-                                queueMessage(packetFusionInit);
+            var packetFusion = (PacketFusionInit) packet;
+            // Test if actual server == leader
+            if (leader == null) {
+                // Check that both servers doesn't have a similar server linked to themselves
+                if (!hasServerInCommon(packetFusion.components())) {
+                    try {
+                        var connectedServerName = getListConnectedServer();
+                        var socketAddress = sc.getLocalAddress();
+                        var packetFusionInit = new PacketFusionInit(9, name, socketAddress, connectedServer.size(), connectedServerName);
+                        queueMessage(packetFusionInit);
 
-                                switchLeaderName(packet.name());
+                        switchLeaderName(packetFusion.name());
 
-                                fusion(packet);
-                            } catch (IOException e) {
-                                logger.info("fail socketAddress");
-                            }
-                        } else {
-                            try {
-                                var leaderAdr = leader.sc.getRemoteAddress();
-                                var packetToReturn = new PacketSocketAddress(11, leaderAdr);
-                                queueMessage(packetToReturn);
-                            } catch (IOException e) {
-                                logger.info("Error");
-                            }
-                        }
+                        fusion(packetFusion);
+                    } catch (IOException e) {
+                        logger.info("fail socketAddress");
                     }
-                }
-                case REFILL -> logger.info("REFILL");
-
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
+                } else {
+                    try {
+                        var leaderAdr = leader.sc.getRemoteAddress();
+                        var packetToReturn = new PacketSocketAddress(11, leaderAdr);
+                        queueMessage(packetToReturn);
+                    } catch (IOException e) {
+                        logger.info("Error");
+                    }
                 }
             }
         }
@@ -421,48 +408,34 @@ public class ServerChatFusion {
          */
         private void publicMessage() {
 //            System.out.println("Context - publicMessage");
-            status = publicMessageReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    // send buffer to all connected clients
-                    var packet = publicMessageReader.get();
-                    var nameServer = packet.components().get(0);
-                    var login = packet.components().get(1);
-                    var message = packet.components().get(2);
+            var nameServer = packet.components().get(0);
+            String login = (String) packet.components().get(1);
+            var message = packet.components().get(2);
 
-                    Message msg = new Message(login, message);
+            Message msg = new Message(login, (String) message);
 
-                    if (nameServer.equals(name)) {
+            if (nameServer.equals(name)) {
 
 //                        connectedClients.add(new Client(login, this));
 
-                        if (isConnect(login)) {
-                            broadcast(msg);
-                        }
-                    } else {
-                        // Test if server == leader
-                        if (leader == null) {
-                            // Yes, send to connected server
-                            connectedServer.forEach((key, value) -> {
-                                if (!key.equals(name)) {
-                                    value.queueMessage(packet);
-                                }
-                            });
-                        } else {
-                            // No, send to leader
-                            leader.queueMessage(packet);
-                        }
-                    }
-                    logger.info(packet.components().toString());
-                    publicMessageReader.reset();
+                if (isConnect(login)) {
+                    broadcast(msg);
                 }
-                case REFILL -> logger.info("REFILL");
-
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
+            } else {
+                // Test if server == leader
+                if (leader == null) {
+                    // Yes, send to connected server
+                    connectedServer.forEach((key, value) -> {
+                        if (!key.equals(name)) {
+                            value.queueMessage(packet);
+                        }
+                    });
+                } else {
+                    // No, send to leader
+                    leader.queueMessage(packet);
                 }
             }
+            logger.info(packet.components().toString());
         }
 
         /**
@@ -470,29 +443,15 @@ public class ServerChatFusion {
          */
         public void connection() {
 //            System.out.println("Context - connection");
-            status = connectReader.process(bufferIn);
-            switch (status) {
-                case DONE -> {
-                    logger.info("DONE");
-                    var packet = connectReader.get();
-                    var login = packet.components().get(0);
-                    logger.info(login);
+            String login = (String) packet.components().get(0);
+            logger.info(login);
 
-                    if (isConnect(login)) {
-                        var packetRefusal = new PacketString(3, new ArrayList<>());
-                        queueMessage(packetRefusal);
-                    } else {
-                        connectedClients.put(new Client(login), this);
-                        connectionAccepted(login);
-                    }
-                    connectReader.reset();
-                }
-                case REFILL -> logger.info("REFILL");
-
-                case ERROR -> {
-                    logger.info("ERROR");
-                    silentlyClose();
-                }
+            if (isConnect(login)) {
+                var packetRefusal = new PacketString(3, new ArrayList<>());
+                queueMessage(packetRefusal);
+            } else {
+                connectedClients.put(new Client(login), this);
+                connectionAccepted(login);
             }
         }
 
