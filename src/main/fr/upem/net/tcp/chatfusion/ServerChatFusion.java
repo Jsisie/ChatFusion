@@ -74,7 +74,7 @@ public class ServerChatFusion {
                         var sc = SocketChannel.open();
 
                         sc.configureBlocking(false);
-                        sc.connect(inetSA); // TODO - connect() instead of bind()
+                        sc.connect(inetSA);
 
                         var key = sc.register(selector, SelectionKey.OP_CONNECT);
                         var context = new Context(this, key);
@@ -186,8 +186,9 @@ public class ServerChatFusion {
 
     private void broadcastClient(Packet packet) {
 //        System.out.println("broadcastClient");
-        for (var client : connectedClients.keySet()) {
-            client.context.queueMessage(packet);
+        for (var value : connectedClients.entrySet()) {
+            value.getValue().queueMessage(packet);
+//            client.context.queueMessage(packet);
         }
     }
 
@@ -219,7 +220,7 @@ public class ServerChatFusion {
 
     // #################### CLIENT #################### //
 
-    private record Client(String login, Context context) {
+    private record Client(String login) {
         private boolean checkIsLogin(String login) {
 //            System.out.println("Client - checkIsLogin");
             return this.login.equals(login);
@@ -227,7 +228,7 @@ public class ServerChatFusion {
 
         @Override
         public String toString() {
-            return login + ", " + context.toString();
+            return login;
         }
     }
 
@@ -481,7 +482,7 @@ public class ServerChatFusion {
                         var packetRefusal = new PacketString(3, new ArrayList<>());
                         queueMessage(packetRefusal);
                     } else {
-                        connectedClients.put(new Client(login, this), this);
+                        connectedClients.put(new Client(login), this);
                         connectionAccepted(login);
                     }
                     connectReader.reset();
