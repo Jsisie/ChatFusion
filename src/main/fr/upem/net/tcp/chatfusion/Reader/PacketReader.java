@@ -3,18 +3,17 @@ package fr.upem.net.tcp.chatfusion.Reader;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketSocketAddress;
 
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-public class PacketReader implements Reader {
+public class PacketReader implements Reader<Packet> {
     private enum State {DONE, WAITING, ERROR}
 
     private State state = State.WAITING;
-    private IntReader intReader = new IntReader();
-    private ConnectReader connectReader = new ConnectReader();
-    private PublicMessageReader publicMessageReader = new PublicMessageReader();
-    private  FusionInitReader fusionInitReader = new FusionInitReader(8);
-    private SocketAddressReader socketAddressReader = new SocketAddressReader();
+    private final IntReader intReader = new IntReader();
+    private final ConnectReader connectReader = new ConnectReader();
+    private final PublicMessageReader publicMessageReader = new PublicMessageReader();
+    private final FusionInitReader fusionInitReader = new FusionInitReader(8);
+    private final SocketAddressReader socketAddressReader = new SocketAddressReader();
     private int opCode;
     private Packet packet;
 
@@ -37,7 +36,6 @@ public class PacketReader implements Reader {
         intReader.reset();
 
         switch (opCode) {
-            // NOpE
             case 0, 1 -> {
                 status = connectReader.process(bb);
                 switch (status) {
@@ -52,13 +50,12 @@ public class PacketReader implements Reader {
                 }
                 connectReader.reset();
             }
-            // NOPE
             case 4 -> {
                 status = publicMessageReader.process(bb);
                 switch (status) {
                     case DONE:
                         // send buffer to all connected clients
-                        var packet = publicMessageReader.get();
+                        packet = publicMessageReader.get();
                     case REFILL:
                         return ProcessStatus.REFILL;
                     case ERROR:
@@ -66,49 +63,46 @@ public class PacketReader implements Reader {
                         return ProcessStatus.ERROR;
                 }
                 publicMessageReader.reset();
-
-                }
-                // NOPE
-                case 8 -> {
-                    status = fusionInitReader.process(bb);
-                    switch (status) {
-                        case DONE :
-                            // get packet from Reader
-                            var packet = fusionInitReader.get();
-                        case REFILL:
-                            return ProcessStatus.REFILL;
-                        case ERROR:
-                            state = State.ERROR;
-                            return ProcessStatus.ERROR;
-                    }
-                    fusionInitReader.reset();
-                }
-                // NOPE
-                case 14 -> {
-                    status = socketAddressReader.process(bb);
-                    switch (status) {
-                        case DONE :
-                                var sa = socketAddressReader.get();
-                                packet = new PacketSocketAddress(14, sa);
-                        case REFILL:
-                            return ProcessStatus.REFILL;
-                        case ERROR:
-                            state = State.ERROR;
-                            return ProcessStatus.ERROR;
-                    }
-                    socketAddressReader.reset();
-                }
             }
+            case 8 -> {
+                status = fusionInitReader.process(bb);
+                switch (status) {
+                    case DONE:
+                        // get packet from Reader
+                        packet = fusionInitReader.get();
+                    case REFILL:
+                        return ProcessStatus.REFILL;
+                    case ERROR:
+                        state = State.ERROR;
+                        return ProcessStatus.ERROR;
+                }
+                fusionInitReader.reset();
+            }
+            case 14 -> {
+                status = socketAddressReader.process(bb);
+                switch (status) {
+                    case DONE:
+                        var sa = socketAddressReader.get();
+                        packet = new PacketSocketAddress(14, sa);
+                    case REFILL:
+                        return ProcessStatus.REFILL;
+                    case ERROR:
+                        state = State.ERROR;
+                        return ProcessStatus.ERROR;
+                }
+                socketAddressReader.reset();
+            }
+        }
         return ProcessStatus.DONE;
-        }
-
-        @Override
-        public Packet get () {
-            return packet;
-        }
-
-        @Override
-        public void reset () {
-            state = State.WAITING;
-        }
     }
+
+    @Override
+    public Packet get() {
+        return packet;
+    }
+
+    @Override
+    public void reset() {
+        state = State.WAITING;
+    }
+}
