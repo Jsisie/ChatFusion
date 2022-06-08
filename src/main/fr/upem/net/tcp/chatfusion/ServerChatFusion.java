@@ -408,11 +408,9 @@ public class ServerChatFusion {
 
             Message msg = new Message(login, (String) message);
 
-
-            // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
-            System.out.println("NAME SERVER: " + nameServer + ", NAME CLIENT: " + name);
-
             if (nameServer.equals(name)) {
+
+                // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
                 connectedClients.put(new Client(login), this);
 
                 if (isConnect(login))

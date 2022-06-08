@@ -106,6 +106,7 @@ public class ClientChat {
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
         uniqueContext = new Context(key);
+        uniqueContext = new Context(key);
         key.attach(uniqueContext);
         sc.connect(serverAddress);
         console.start();
@@ -277,6 +278,7 @@ public class ClientChat {
             if (sc.read(bufferIn) == -1) // read() returns -1 when connection closed
                 closed = true;
             processIn();
+            updateInterestOps();
         }
 
         /**
@@ -291,6 +293,7 @@ public class ClientChat {
 //            System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
             bufferOut.compact();
+//            processOut(); // TODO - VINCENT PUT THIS HERE I THINK
             updateInterestOps();
         }
 
