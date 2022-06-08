@@ -7,15 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
-public class PacketString implements Packet {
-    private final int opCode;
-    private final List<String> components;
-    private final Charset cs = StandardCharsets.UTF_8;
+public record PacketString(int opCode, List<String> components) implements Packet {
 
-    public PacketString(int opCode, List<String> list) {
-        this.opCode = opCode;
-        this.components = list;
-    }
+    private static final Charset cs = StandardCharsets.UTF_8;
 
     public PacketString(int opCode, String list) {
         this(opCode, List.of(list));
