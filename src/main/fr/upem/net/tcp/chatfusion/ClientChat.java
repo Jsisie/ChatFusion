@@ -228,34 +228,6 @@ public class ClientChat {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
                 bufferOut.put(fullMsg.parseToByteBuffer().flip());
-
-               /*bufferOut.flip();
-                // TODO - test
-
-                var opCode = bufferOut.getInt();
-                var serverL = bufferOut.getInt();
-                var limit = bufferOut.limit();
-                bufferOut.limit(bufferOut.position() + serverL);
-                var server = StandardCharsets.UTF_8.decode(bufferOut);
-                bufferOut.limit(limit);
-
-                var loginL = bufferOut.getInt();
-                limit = bufferOut.limit();
-                bufferOut.limit(bufferOut.position() + loginL);
-                var login = StandardCharsets.UTF_8.decode(bufferOut);
-                bufferOut.limit(limit);
-
-                var msgL = bufferOut.getInt();
-                limit = bufferOut.limit();
-                bufferOut.limit(bufferOut.position() + msgL);
-                var msg = StandardCharsets.UTF_8.decode(bufferOut);
-                bufferOut.limit(limit);
-
-                System.out.println("opcode " + opCode);
-                System.out.println("server " + server);
-                System.out.println("login " + login);
-                System.out.println("msg " + msg);*/
-
             }
         }
 

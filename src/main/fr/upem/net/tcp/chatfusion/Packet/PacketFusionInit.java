@@ -6,31 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.logging.Logger;
 
-public class PacketFusionInit implements Packet {
-    private final int opCode;
-    private final List<String> components;
-    private final String name;
-    private final int nbMembers;
-    private  final SocketAddress sa;
-    private final Charset cs = StandardCharsets.UTF_8;
+public record PacketFusionInit (int opCode, String name, SocketAddress sa, int nbMembers, List<String> components) implements Packet {
 
-    public PacketFusionInit(int opCode, String name, SocketAddress sa, int nbMembers, List<String> members) {
-        this.opCode = opCode;
-        this.name = name;
-        this.nbMembers = nbMembers;
-        this.components = members;
-        this.sa = sa;
-    }
-
-    public String GetName(){
-        return  name;
-    }
-
-    public SocketAddress getSocketAddress() {
-        return sa;
-    }
+    private static final Charset cs = StandardCharsets.UTF_8;
 
     @Override
     public int opCodeGet() {

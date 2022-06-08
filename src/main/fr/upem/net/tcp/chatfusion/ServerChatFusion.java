@@ -72,8 +72,10 @@ public class ServerChatFusion {
                     try {
                         var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
                         var sc = SocketChannel.open();
-                        sc.bind(inetSA);
+
                         sc.configureBlocking(false);
+                        sc.connect(inetSA); // TODO - connect() instead of bind()
+
                         var key = sc.register(selector, SelectionKey.OP_CONNECT);
                         var context = new Context(this, key);
                         context.requestFusion();
@@ -275,7 +277,7 @@ public class ServerChatFusion {
         private void processIn() {
 //            System.out.println("Context - processIn");
             for (; ; ) {
-                bufferIn.flip();
+//                bufferIn.flip();
                 logger.info("DONE");
                 int opCode = bufferIn.getInt();
                 switch (opCode) {
@@ -355,7 +357,7 @@ public class ServerChatFusion {
                                 var packetFusionInit = new PacketFusionInit(9, name, socketAddress, connectedServer.size(), connectedServerName);
                                 queueMessage(packetFusionInit);
 
-                                switchLeaderName(packet.GetName());
+                                switchLeaderName(packet.name());
 
                                 fusion(packet);
                             } catch (IOException e) {
@@ -393,7 +395,7 @@ public class ServerChatFusion {
                     return;
                 }
             } else {
-                connectedServer.put(packet.GetName(), this);
+                connectedServer.put(packet.name(), this);
             }
         }
 
