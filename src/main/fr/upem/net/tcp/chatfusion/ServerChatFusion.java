@@ -45,23 +45,21 @@ public class ServerChatFusion {
      */
     private void consoleRun() {
 //        System.out.println("ConsoleRun");
-        try {
-            try (var scanner = new Scanner(System.in)) {
-                while (scanner.hasNextLine()) {
+        try (var scanner = new Scanner(System.in)) {
+            while (scanner.hasNextLine()) {
+                try {
                     var msg = scanner.nextLine();
                     sendCommand(msg);
+                } catch (InterruptedException e) {
+                    logger.info("Console thread has been interrupted");
                 }
             }
-            logger.info("Console thread stopping");
-        } catch (InterruptedException e) {
-            logger.info("Console thread has been interrupted");
         }
+        logger.info("Console thread stopping");
     }
 
     /**
      * Send instructions to the selector via a BlockingQueue and wake it up
-     *
-     * @throws InterruptedException
      */
     private void sendCommand(String msg) throws InterruptedException {
 //        System.out.println("sendCommand");
@@ -98,9 +96,8 @@ public class ServerChatFusion {
      */
     private boolean isConnect(String login) {
 //        System.out.println("isConnect");
-        for (var client : connectedClients.keySet()) {
+        for (var client : connectedClients.keySet())
             if (client.checkIsLogin(login)) return true;
-        }
         return false;
     }
 
@@ -187,17 +184,15 @@ public class ServerChatFusion {
 
     private void broadcastClient(Packet packet) {
 //        System.out.println("broadcastClient");
-        for (var value : connectedClients.entrySet()) {
-            value.getValue().queueMessage(packet);
+        for (var value : connectedClients.values()) {
+            value.queueMessage(packet);
 //            client.context.queueMessage(packet);
         }
     }
 
     private void broadcastServer(Packet packet) {
 //        System.out.println("broadcastServer");
-        connectedServer.forEach((key, value) -> {
-            value.queueMessage(packet);
-        });
+        connectedServer.forEach((key, value) -> value.queueMessage(packet));
     }
 
     private List<String> getListConnectedServer() {
@@ -274,9 +269,8 @@ public class ServerChatFusion {
          * before the call to process and after the call
          */
         private void processIn() {
-            System.out.println("Context - processIn");
+//            System.out.println("Context - processIn");
             for (; ; ) {
-                System.out.println("IN FOR(;;)");
                 status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
@@ -380,7 +374,6 @@ public class ServerChatFusion {
                     queueMessage(packetChangeLeader);
                 } catch (IOException e) {
                     logger.info("Channel was closed");
-                    return;
                 }
             } else {
                 connectedServer.put(packet.name(), this);
@@ -408,19 +401,22 @@ public class ServerChatFusion {
          */
         private void publicMessage() {
 //            System.out.println("Context - publicMessage");
+
             var nameServer = packet.components().get(0);
             String login = (String) packet.components().get(1);
             var message = packet.components().get(2);
 
             Message msg = new Message(login, (String) message);
 
+
+            // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
+            System.out.println("NAME SERVER: " + nameServer + ", NAME CLIENT: " + name);
+
             if (nameServer.equals(name)) {
+                connectedClients.put(new Client(login), this);
 
-//                        connectedClients.add(new Client(login, this));
-
-                if (isConnect(login)) {
+                if (isConnect(login))
                     broadcast(msg);
-                }
             } else {
                 // Test if server == leader
                 if (leader == null) {
