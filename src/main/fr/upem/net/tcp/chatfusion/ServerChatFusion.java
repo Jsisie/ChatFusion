@@ -67,7 +67,6 @@ public class ServerChatFusion {
             String[] cmd = msg.split(" ");
             switch (cmd[0]) {
                 case "FUSION" -> {
-                    System.out.println("Fusion request initialized");
                     try {
                         var inetSA = new InetSocketAddress(cmd[1], Integer.parseInt(cmd[2]));
                         var sc = SocketChannel.open();
@@ -177,8 +176,6 @@ public class ServerChatFusion {
         for (var key : keys) {
             var attach = key.attachment();
             if (attach == null) continue;
-            System.out.println("key = " + key);
-            System.out.println("packet = " + packet);
             var context = (Context) attach;
             context.queueMessage(packet);
         }
@@ -415,9 +412,7 @@ public class ServerChatFusion {
 //                connectedClients.put(new Client(login), this);
 
                 if (isConnect(login)) {
-                    System.out.println("tg (t'es gonnecté)");
                     broadcast(packet);
-                    System.out.println("packetBuffer = " + packet.parseToByteBuffer());
                 } else {
                     logger.info("Client " + login + " isn't connected to the server");
                 }
@@ -470,9 +465,8 @@ public class ServerChatFusion {
          * @param packet Message
          */
         public void queueMessage(Packet packet) {
-            System.out.println("Context - queueMessage");
+//            System.out.println("Context - queueMessage");
             queue.add(packet);
-            logger.info("" + queue.size());
             processOut();
             updateInterestOps();
         }
@@ -509,7 +503,7 @@ public class ServerChatFusion {
         }
 
         private void silentlyClose() {
-            System.out.println("Context - silentlyClose");
+//            System.out.println("Context - silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {
