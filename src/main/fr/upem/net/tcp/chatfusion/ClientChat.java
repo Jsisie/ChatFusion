@@ -199,14 +199,22 @@ public class ClientChat {
                     case DONE -> {
                         logger.info("DONE");
                         packet = packetReader.get();
+                        System.out.println("packet = " + packet);
                         switch (packet.opCodeGet()) {
                             // reponse from server - connection
                             case 2 -> {
                                 System.out.println("youpi on est connecter");
+                                System.out.println("ALED packet = " + packet);
+                                System.out.println("ALED bufferIn = " + bufferIn);
+
+                                // TODO get the servername
+
+                                packetReader.reset();
                                 return;
                             }
                             case 3 ->{
                                 System.out.println("bah zut on c'est fait recaler");
+                                packetReader.reset();
                                 silentlyClose();
                                 return;
                             }
@@ -214,9 +222,11 @@ public class ClientChat {
                             case 4 -> {
                                 System.out.println("C'est parti pour parler avec tous mes amis !!");
                                 publicMessage();
+                                packetReader.reset();
                                 return;
                             }
                         }
+                        packetReader.reset();
                     }
                     case REFILL -> {
                         logger.info("REFILL");
@@ -287,7 +297,7 @@ public class ClientChat {
         }
 
         private void silentlyClose() {
-//            System.out.println("Context.silentlyClose");
+            System.out.println("Context.silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {

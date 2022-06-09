@@ -21,9 +21,11 @@ public class PublicMessageReader implements Reader<PacketString> {
         }
         if (server.isEmpty()) {
             ProcessStatus status = stringReader.process(bb);
+
             switch (status) {
                 case DONE:
                     server = stringReader.get();
+                    System.out.println("server = " + server);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -38,6 +40,7 @@ public class PublicMessageReader implements Reader<PacketString> {
             switch (status) {
                 case DONE:
                     login = stringReader.get();
+                    System.out.println("login = " + login);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -52,6 +55,7 @@ public class PublicMessageReader implements Reader<PacketString> {
             switch (status) {
                 case DONE:
                     msg = stringReader.get();
+                    System.out.println("msg = " + msg);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;

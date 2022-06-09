@@ -175,10 +175,10 @@ public class ServerChatFusion {
 //        System.out.println("broadcast");
         var keys = selector.keys();
         for (var key : keys) {
-            System.out.println("key = " + key);
-            System.out.println("packet = " + packet);
             var attach = key.attachment();
             if (attach == null) continue;
+            System.out.println("key = " + key);
+            System.out.println("packet = " + packet);
             var context = (Context) attach;
             context.queueMessage(packet);
         }
@@ -411,13 +411,16 @@ public class ServerChatFusion {
             Message msg = new Message(login, (String) message);
 
             if (nameServer.equals(name)) {
-
+// X)
                 // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
 //                connectedClients.put(new Client(login), this);
 
                 if (isConnect(login)) {
                     System.out.println("tg (t'es gonnecté)");
-                    broadcast(msg);
+                    broadcast(packet);
+                    System.out.println("packetBuffer = " + packet.parseToByteBuffer());
+                } else {
+                    logger.info("Client " + login + " isn't connected to the server");
                 }
             } else {
                 // Test if server == leader
@@ -507,7 +510,7 @@ public class ServerChatFusion {
         }
 
         private void silentlyClose() {
-//            System.out.println("Context - silentlyClose");
+            System.out.println("Context - silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {
