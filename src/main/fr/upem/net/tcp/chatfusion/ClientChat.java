@@ -16,6 +16,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -28,6 +29,7 @@ public class ClientChat {
     private final Selector selector;
     private final InetSocketAddress serverAddress;
     private final String login;
+    private String nameServer;
     private final Thread console;
     private Context uniqueContext;
     private final Object lock = new Object();
@@ -73,17 +75,19 @@ public class ClientChat {
             switch (cmd[0]) {
                 case "LOGIN" -> {
                     while (queueOut.size() == CAPACITY) lock.wait();
-                    var packet = new PacketString(0, cmd[1]);
+                    // TODO - note sure if it's 'login' or 'cmd[1]'
+                    var packet = new PacketString(0, login);
                     queueOut.add(packet);
                     selector.wakeup();
                 }
-                case "MESSAGE" -> {
+                default -> {
                     while (queueOut.size() == CAPACITY) lock.wait();
-                    var packet = new PacketString(4, List.of(cmd[1], cmd[2], cmd[3]));
+                    // TODO - remove "ChatFusion", change by 'nameServer', that is initialize (and final..)
+                    var packet = new PacketString(4, List.of("ChatFusion", login, Arrays.toString(cmd)));
                     queueOut.add(packet);
                     selector.wakeup();
                 }
-                default -> System.out.println("Unknown command typed");
+//                default -> System.out.println("Unknown command typed");
             }
         }
     }
@@ -202,6 +206,7 @@ public class ClientChat {
                             case 2 -> {
                                 // TODO get the servername
                                 packetReader.reset();
+                                logger.info("Client successfully connected to server");
                                 return;
                             }
                             case 3 ->{

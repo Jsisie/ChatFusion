@@ -414,7 +414,7 @@ public class ServerChatFusion {
                 if (isConnect(login)) {
                     broadcast(packet);
                 } else {
-                    logger.info("Client " + login + " isn't connected to the server");
+                    logger.warning("Client " + login + " isn't connected to the server");
                 }
             } else {
                 // Test if server == leader
@@ -430,7 +430,6 @@ public class ServerChatFusion {
                     leader.queueMessage(packet);
                 }
             }
-            logger.info(packet.components().toString());
         }
 
         /**
