@@ -25,7 +25,6 @@ public class PublicMessageReader implements Reader<PacketString> {
             switch (status) {
                 case DONE:
                     server = stringReader.get();
-                    System.out.println("server = " + server);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -40,7 +39,6 @@ public class PublicMessageReader implements Reader<PacketString> {
             switch (status) {
                 case DONE:
                     login = stringReader.get();
-                    System.out.println("login = " + login);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -55,7 +53,6 @@ public class PublicMessageReader implements Reader<PacketString> {
             switch (status) {
                 case DONE:
                     msg = stringReader.get();
-                    System.out.println("msg = " + msg);
                     break;
                 case REFILL:
                     return ProcessStatus.REFILL;
@@ -78,7 +75,6 @@ public class PublicMessageReader implements Reader<PacketString> {
         if (state != PublicMessageReader.State.DONE) {
             throw new IllegalStateException();
         }
-        System.out.println("packet = " + packet);
         return packet;
     }
 

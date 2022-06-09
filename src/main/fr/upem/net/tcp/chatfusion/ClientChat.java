@@ -1,6 +1,5 @@
 package fr.upem.net.tcp.chatfusion;
 
-import fr.upem.net.tcp.chatfusion.Packet.Message;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
@@ -197,30 +196,21 @@ public class ClientChat {
                 status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
-                        logger.info("DONE");
                         packet = packetReader.get();
-                        System.out.println("packet = " + packet);
                         switch (packet.opCodeGet()) {
                             // reponse from server - connection
                             case 2 -> {
-                                System.out.println("youpi on est connecter");
-                                System.out.println("ALED packet = " + packet);
-                                System.out.println("ALED bufferIn = " + bufferIn);
-
                                 // TODO get the servername
-
                                 packetReader.reset();
                                 return;
                             }
                             case 3 ->{
-                                System.out.println("bah zut on c'est fait recaler");
                                 packetReader.reset();
                                 silentlyClose();
                                 return;
                             }
                             // public message
                             case 4 -> {
-                                System.out.println("C'est parti pour parler avec tous mes amis !!");
                                 publicMessage();
                                 packetReader.reset();
                                 return;
@@ -297,7 +287,7 @@ public class ClientChat {
         }
 
         private void silentlyClose() {
-            System.out.println("Context.silentlyClose");
+//            System.out.println("Context.silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {
@@ -338,7 +328,7 @@ public class ClientChat {
         }
 
         public void doConnect() throws IOException {
-            System.out.println("Context.doConnect");
+//            System.out.println("Context.doConnect");
             if (!sc.finishConnect()) {
                 logger.warning("Bad thing happened");
                 return;
