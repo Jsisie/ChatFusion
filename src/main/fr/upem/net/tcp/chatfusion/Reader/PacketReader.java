@@ -57,11 +57,8 @@ public class PacketReader implements Reader<Packet> {
                 packet = new PacketString(2, List.of("ChatFusion"));
                 return ProcessStatus.DONE;
             }
-            case 3 -> {
-                // TODO fetch nothing, just the opcode maybe
-            }
+            case 3 -> {}
             case 4 -> {
-                System.out.println("oui bonjour");
                 status = publicMessageReader.process(bb);
                 switch (status) {
                     case DONE -> packet = publicMessageReader.get();
