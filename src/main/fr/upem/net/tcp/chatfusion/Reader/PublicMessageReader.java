@@ -64,8 +64,6 @@ public class PublicMessageReader implements Reader<PacketString> {
                     return ProcessStatus.ERROR;
             }
         }
-
-
         state = PublicMessageReader.State.DONE;
         var list = new ArrayList<String>();
         list.add(server);
