@@ -26,7 +26,7 @@ public record Message(String login, String message) implements Packet {
 
     @Override
     public int size() {
-        return cs.encode(login).limit() + cs.encode(message).limit() + Integer.BYTES * 2;
+        return cs.encode(login).limit() + cs.encode(message).limit() + Integer.BYTES * 3;
     }
 
     @Override
@@ -38,6 +38,7 @@ public record Message(String login, String message) implements Packet {
     public ByteBuffer parseToByteBuffer() {
         var bbLogin = cs.encode(login);
         var bbMessage = cs.encode(message);
-        return ByteBuffer.allocate(size()).putInt(bbLogin.limit()).put(bbLogin).putInt(bbMessage.limit()).put(bbMessage);
+        // TODO - add opCode here (4)
+        return ByteBuffer.allocate(size()).putInt(4).putInt(bbLogin.limit()).put(bbLogin).putInt(bbMessage.limit()).put(bbMessage);
     }
 }
