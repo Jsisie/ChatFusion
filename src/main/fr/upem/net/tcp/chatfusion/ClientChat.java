@@ -1,10 +1,11 @@
 package fr.upem.net.tcp.chatfusion;
 
+import fr.upem.net.tcp.chatfusion.Packet.Message;
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
-import fr.upem.net.tcp.chatfusion.Reader.Reader;
-
+import fr.upem.net.tcp.chatfusion.Reader.PacketReader;
+import  fr.upem.net.tcp.chatfusion.Reader.Reader.ProcessStatus;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -170,10 +171,13 @@ public class ClientChat {
         private final SocketChannel sc;
         private final ByteBuffer bufferIn = ByteBuffer.allocate(BUFFER_SIZE);
         private final ByteBuffer bufferOut = ByteBuffer.allocate(BUFFER_SIZE);
+        private final PacketReader packetReader = new PacketReader();
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
         private boolean closed = false;
         private final Charset cs = StandardCharsets.UTF_8;
         private final MessageReader msgReader = new MessageReader();
+        private ProcessStatus status;
+        private Packet packet;
 
         private Context(SelectionKey key) {
 //            System.out.println("Context.constructor");
@@ -190,7 +194,7 @@ public class ClientChat {
         private void processIn() {
 //            System.out.println("Context.processIn");
             for (; ; ) {
-                Reader.ProcessStatus status = msgReader.process(bufferIn);
+                status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
                         logger.info("DONE");
@@ -225,6 +229,14 @@ public class ClientChat {
                     }
                 }
             }
+        }
+
+        private void publicMessage() {
+            var nameServer = packet.components().get(0);
+            String login = (String) packet.components().get(1);
+            var message = packet.components().get(2);
+
+            System.out.println(login + "[" + nameServer + "]: " + message);
         }
 
         /**

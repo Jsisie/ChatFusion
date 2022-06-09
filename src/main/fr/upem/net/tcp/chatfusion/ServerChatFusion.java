@@ -175,6 +175,8 @@ public class ServerChatFusion {
 //        System.out.println("broadcast");
         var keys = selector.keys();
         for (var key : keys) {
+            System.out.println("key = " + key);
+            System.out.println("packet = " + packet);
             var attach = key.attachment();
             if (attach == null) continue;
             var context = (Context) attach;
@@ -245,7 +247,7 @@ public class ServerChatFusion {
         private boolean closed = false;
         private Packet packet;
 
-        Reader.ProcessStatus status;
+        private Reader.ProcessStatus status;
 
         private Context(ServerChatFusion server, SelectionKey key) {
 //            System.out.println("Context - constructor");
@@ -272,6 +274,7 @@ public class ServerChatFusion {
 //            System.out.println("Context - processIn");
             for (; ; ) {
                 status = packetReader.process(bufferIn);
+
                 switch (status) {
                     case DONE -> {
                         logger.info("DONE");
@@ -401,7 +404,6 @@ public class ServerChatFusion {
          */
         private void publicMessage() {
 //            System.out.println("Context - publicMessage");
-
             var nameServer = packet.components().get(0);
             String login = (String) packet.components().get(1);
             var message = packet.components().get(2);
@@ -524,7 +526,9 @@ public class ServerChatFusion {
         private void doRead() throws IOException {
 //            System.out.println("Context - doRead");
             if (sc.read(bufferIn) == -1) closed = true;
-            processIn();
+            if(!closed) {
+                processIn();
+            }
             updateInterestOps();
         }
 
