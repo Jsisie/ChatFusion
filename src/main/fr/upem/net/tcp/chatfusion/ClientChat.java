@@ -308,7 +308,6 @@ public class ClientChat {
             if (sc.read(bufferIn) == -1) // read() returns -1 when connection closed
                 closed = true;
             processIn();
-            updateInterestOps();
         }
 
         /**

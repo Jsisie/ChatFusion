@@ -1,14 +1,19 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
+import fr.upem.net.tcp.chatfusion.ClientChat;
+
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.logging.Logger;
 
 public record PacketFusionInit (int opCode, String name, SocketAddress sa, int nbMembers, List<String> components) implements Packet {
-
+    static private final Logger logger = Logger.getLogger(PacketFusionInit.class.getName());
     private static final Charset cs = StandardCharsets.UTF_8;
 
     @Override
@@ -40,11 +45,21 @@ public record PacketFusionInit (int opCode, String name, SocketAddress sa, int n
         bb.put(bbName);
 
         var inetSA = (InetSocketAddress) sa;
-        var bbIPAddress = cs.encode(inetSA.getHostName());
-        bb.put(bbIPAddress);
-        bb.putInt(inetSA.getPort());
+        var ipAdresse = inetSA.getHostName();
+        try {
+            InetAddress ip = InetAddress.getByName(ipAdresse);
+            var bytes = ip.getAddress();
+            for (byte b : bytes) {
+                bb.put(b);
+            }
+            bb.putInt(inetSA.getPort());
+        }
+        catch (IOException ioe){
+            logger.info("erreur du put socket adresse dans le buffer");
+        }
 
-        bb.putInt(name.length());
+
+        //bb.putInt(name.length());
         bb.putInt(nbMembers);
         for (var component : components) {
             var bbComponent = cs.encode(component);

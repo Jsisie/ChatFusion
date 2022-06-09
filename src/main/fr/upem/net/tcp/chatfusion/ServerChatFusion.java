@@ -294,7 +294,7 @@ public class ServerChatFusion {
                                 return;
                             }
                         }
-                        packetReader.reset();
+
                     }
                     case REFILL -> {
                         logger.info("REFILL");
@@ -306,6 +306,7 @@ public class ServerChatFusion {
                         silentlyClose();
                     }
                 }
+                packetReader.reset();
             }
         }
 
