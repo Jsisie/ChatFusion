@@ -411,10 +411,12 @@ public class ServerChatFusion {
             if (nameServer.equals(name)) {
 
                 // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
-                connectedClients.put(new Client(login), this);
+//                connectedClients.put(new Client(login), this);
 
-                if (isConnect(login))
+                if (isConnect(login)) {
+                    System.out.println("tg (t'es gonnecté)");
                     broadcast(msg);
+                }
             } else {
                 // Test if server == leader
                 if (leader == null) {

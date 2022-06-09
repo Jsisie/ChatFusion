@@ -193,15 +193,33 @@ public class ClientChat {
                 Reader.ProcessStatus status = msgReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
-                        var value = msgReader.get();
-                        System.out.println(value.login() + ": " + value.message());
-                        msgReader.reset();
+                        logger.info("DONE");
+                        packet = packetReader.get();
+                        switch (packet.opCodeGet()) {
+                            // reponse from server - connection
+                            case 2 -> {
+                                System.out.println("youpi on est connecter");
+                                return;
+                            }
+                            case 3 ->{
+                                System.out.println("bah zut on c'est fait recaler");
+                                silentlyClose();
+                                return;
+                            }
+                            // public message
+                            case 4 -> {
+                                System.out.println("C'est parti pour parler avec tous mes amis !!");
+                                publicMessage();
+                                return;
+                            }
+                        }
                     }
                     case REFILL -> {
-                        updateInterestOps();
+                        logger.info("REFILL");
                         return;
                     }
                     case ERROR -> {
+                        logger.info("ERROR");
                         silentlyClose();
                         return;
                     }
@@ -293,7 +311,7 @@ public class ClientChat {
 //            System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
             bufferOut.compact();
-//            processOut(); // TODO - VINCENT PUT THIS HERE I THINK
+            processOut();
             updateInterestOps();
         }
 
