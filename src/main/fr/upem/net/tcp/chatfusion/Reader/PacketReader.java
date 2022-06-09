@@ -16,6 +16,7 @@ public class PacketReader implements Reader<Packet> {
     private final PublicMessageReader publicMessageReader = new PublicMessageReader();
     private final FusionInitReader fusionInitReader = new FusionInitReader(8);
     private final SocketAddressReader socketAddressReader = new SocketAddressReader();
+    private final StringReader stringReader = new StringReader();
     private int opCode;
     private Packet packet;
 
@@ -36,7 +37,6 @@ public class PacketReader implements Reader<Packet> {
             }
         }
         intReader.reset();
-        //System.out.println("opCode = " + opCode);
         switch (opCode) {
             case 0, 1 -> {
                 status = connectReader.process(bb);
@@ -52,16 +52,33 @@ public class PacketReader implements Reader<Packet> {
                 }
                 connectReader.reset();
             }
-            case 2 -> {
-                // TODO fetch the server name with stringReader :)
-                packet = new PacketString(2, List.of("ChatFusion"));
+            case 2 -> { status = stringReader.process(bb);
+                switch (status){
+                    case DONE -> {
+                        packet = new PacketString(2, List.of(stringReader.get()));
+                        stringReader.reset();
+                        return ProcessStatus.DONE;
+                    }
+                    case REFILL -> {
+                        return ProcessStatus.REFILL;
+                    }
+
+                    case ERROR -> {
+                        state = State.ERROR;
+                        return ProcessStatus.ERROR;
+                    }
+                }
                 return ProcessStatus.DONE;
             }
             case 3 -> {}
             case 4 -> {
                 status = publicMessageReader.process(bb);
                 switch (status) {
-                    case DONE -> packet = publicMessageReader.get();
+                    case DONE -> {
+                        packet = publicMessageReader.get();
+                        publicMessageReader.reset();
+                        return ProcessStatus.DONE;
+                    }
                     case REFILL -> {
                         return ProcessStatus.REFILL;
                     }
