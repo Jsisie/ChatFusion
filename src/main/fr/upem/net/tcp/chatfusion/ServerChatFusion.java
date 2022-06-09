@@ -409,7 +409,6 @@ public class ServerChatFusion {
             var message = packet.components().get(2);
 
             Message msg = new Message(login, (String) message);
-
             if (nameServer.equals(name)) {
 // X)
                 // TODO - remove below line, add manually the Client everytime, remove it to test LOGIN
@@ -471,7 +470,7 @@ public class ServerChatFusion {
          * @param packet Message
          */
         public void queueMessage(Packet packet) {
-//            System.out.println("Context - queueMessage");
+            System.out.println("Context - queueMessage");
             queue.add(packet);
             logger.info("" + queue.size());
             processOut();
