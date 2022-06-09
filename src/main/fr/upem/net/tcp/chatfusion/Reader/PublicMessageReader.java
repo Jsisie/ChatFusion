@@ -76,6 +76,7 @@ public class PublicMessageReader implements Reader<PacketString> {
         if (state != PublicMessageReader.State.DONE) {
             throw new IllegalStateException();
         }
+        System.out.println("packet = " + packet);
         return packet;
     }
 

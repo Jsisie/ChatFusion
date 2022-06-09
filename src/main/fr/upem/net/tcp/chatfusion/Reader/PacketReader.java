@@ -2,8 +2,10 @@ package fr.upem.net.tcp.chatfusion.Reader;
 
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketSocketAddress;
+import fr.upem.net.tcp.chatfusion.Packet.PacketString;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class PacketReader implements Reader<Packet> {
     private enum State {DONE, WAITING, ERROR}
@@ -34,7 +36,7 @@ public class PacketReader implements Reader<Packet> {
             }
         }
         intReader.reset();
-
+        //System.out.println("opCode = " + opCode);
         switch (opCode) {
             case 0, 1 -> {
                 status = connectReader.process(bb);
@@ -50,7 +52,16 @@ public class PacketReader implements Reader<Packet> {
                 }
                 connectReader.reset();
             }
+            case 2 -> {
+                // TODO fetch the server name with stringReader :)
+                packet = new PacketString(2, List.of("ChatFusion"));
+                return ProcessStatus.DONE;
+            }
+            case 3 -> {
+                // TODO fetch nothing, just the opcode maybe
+            }
             case 4 -> {
+                System.out.println("oui bonjour");
                 status = publicMessageReader.process(bb);
                 switch (status) {
                     case DONE -> packet = publicMessageReader.get();
