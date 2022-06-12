@@ -64,20 +64,19 @@ public class ClientChat {
     private void sendCommand(String msg) throws InterruptedException {
         synchronized (console) {
             String[] cmd = msg.split(" ");
-            switch (cmd[0]) {
-                case "LOGIN" -> {
+            if ("LOGIN".equals(cmd[0])) {
+                while (queueOut.size() == CAPACITY) lock.wait();
+                var packet = new PacketString(0, login);
+                queueOut.add(packet);
+                selector.wakeup();
+            } else {
+                if (uniqueContext.nameServer != null) {
                     while (queueOut.size() == CAPACITY) lock.wait();
-                    // TODO - note sure if it's 'login' or 'cmd[1]'
-                    var packet = new PacketString(0, login);
-                    queueOut.add(packet);
-                    selector.wakeup();
-                }
-                default -> {
-                    while (queueOut.size() == CAPACITY) lock.wait();
-                    // TODO - remove "ChatFusion", change by 'nameServer', that is initialize (and final..)
                     var packet = new PacketString(4, List.of(uniqueContext.nameServer, login, Arrays.toString(cmd)));
                     queueOut.add(packet);
                     selector.wakeup();
+                } else {
+                    logger.info("Client is not connected yet to a server");
                 }
             }
         }
@@ -162,7 +161,6 @@ public class ClientChat {
         private final PacketReader packetReader = new PacketReader();
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
         private boolean closed = false;
-        private ProcessStatus status;
         private Packet packet;
         private String nameServer;
 
@@ -179,21 +177,13 @@ public class ClientChat {
          */
         private void processIn() {
             for (; ; ) {
-                status = packetReader.process(bufferIn);
+                ProcessStatus status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
                         packet = packetReader.get();
                         switch (packet.opCodeGet()) {
                             case 2 -> {
-
-
-                                // TODO get the servername
-                                // TODO - FIX IN PROCESS
                                 nameServer = (String) packet.components().get(0);
-                                System.out.println("server name = " + nameServer);
-                                // TODO - FIX IN PROCESS
-
-
                                 packetReader.reset();
                                 logger.info("Client successfully connected to server");
                                 return;
@@ -260,8 +250,8 @@ public class ClientChat {
          * closed and of both ByteBuffers.
          * <p>
          * The convention is that both buffers are in write-mode before the call to
-         * updateInterestOps and after the call. Also it is assumed that process has
-         * been be called just before updateInterestOps.
+         * updateInterestOps and after the call. Also, it is assumed that process has
+         * been called just before updateInterestOps.
          */
         private void updateInterestOps() {
             int ops = 0;
