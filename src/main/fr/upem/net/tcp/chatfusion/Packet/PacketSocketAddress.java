@@ -29,7 +29,7 @@ public record PacketSocketAddress(int opCode, SocketAddress sa) implements Packe
     }
 
     @Override
-    public ByteBuffer parseToByteBuffer() {
+    public ByteBuffer generateByteBuffer() {
         var bb = ByteBuffer.allocate(size());
         bb.putInt(opCode);
         var inetSA = (InetSocketAddress) sa;

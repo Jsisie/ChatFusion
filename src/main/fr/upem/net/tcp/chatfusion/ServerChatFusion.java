@@ -480,7 +480,7 @@ public class ServerChatFusion {
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
-                bufferOut.put(fullMsg.parseToByteBuffer().flip());
+                bufferOut.put(fullMsg.generateByteBuffer().flip());
             }
         }
 

@@ -35,7 +35,7 @@ public record Message(String login, String message) implements Packet {
     }
 
     @Override
-    public ByteBuffer parseToByteBuffer() {
+    public ByteBuffer generateByteBuffer() {
         var bbLogin = cs.encode(login);
         var bbMessage = cs.encode(message);
         // TODO - add opCode here (4)

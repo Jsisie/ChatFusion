@@ -263,7 +263,7 @@ public class ClientChat {
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {// take the value without removing it from the queue
                 var fullMsg = queue.poll();
                 if (fullMsg == null) return;
-                bufferOut.put(fullMsg.parseToByteBuffer().flip());
+                bufferOut.put(fullMsg.generateByteBuffer().flip());
             }
         }
 

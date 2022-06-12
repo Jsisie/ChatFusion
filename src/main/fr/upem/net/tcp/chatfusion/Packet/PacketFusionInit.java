@@ -37,7 +37,7 @@ public record PacketFusionInit (int opCode, String name, SocketAddress sa, int n
     }
 
     @Override
-    public ByteBuffer parseToByteBuffer() {
+    public ByteBuffer generateByteBuffer() {
         ByteBuffer bb = ByteBuffer.allocate(size());
         bb.putInt(opCode);
         var bbName = cs.encode(name);

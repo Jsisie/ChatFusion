@@ -34,7 +34,7 @@ public record PacketString(int opCode, List<String> components) implements Packe
     }
 
     @Override
-    public ByteBuffer parseToByteBuffer() {
+    public ByteBuffer generateByteBuffer() {
         ByteBuffer bb = ByteBuffer.allocate(size());
         bb.putInt(opCode);
         for (var component : components) {

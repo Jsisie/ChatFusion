@@ -12,5 +12,5 @@ public interface Packet {
 
     List<?> components();
 
-    ByteBuffer parseToByteBuffer();
+    ByteBuffer generateByteBuffer();
 }

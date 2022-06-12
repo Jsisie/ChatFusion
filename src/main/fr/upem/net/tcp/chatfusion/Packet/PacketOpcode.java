@@ -21,7 +21,7 @@ public record PacketOpcode (int opCode) implements Packet {
     }
 
     @Override
-    public ByteBuffer parseToByteBuffer() {
+    public ByteBuffer generateByteBuffer() {
         ByteBuffer bb = ByteBuffer.allocate(size());
         bb.putInt(opCode);
         return bb;
