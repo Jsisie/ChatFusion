@@ -10,7 +10,7 @@ public interface Packet {
 
     int size();
 
-    List components();
+    List<?> components();
 
     ByteBuffer parseToByteBuffer();
 }
