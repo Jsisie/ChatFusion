@@ -2,9 +2,9 @@ package fr.upem.net.tcp.chatfusion;
 
 import fr.upem.net.tcp.chatfusion.Packet.Packet;
 import fr.upem.net.tcp.chatfusion.Packet.PacketString;
-import fr.upem.net.tcp.chatfusion.Reader.MessageReader;
 import fr.upem.net.tcp.chatfusion.Reader.PacketReader;
-import  fr.upem.net.tcp.chatfusion.Reader.Reader.ProcessStatus;
+import fr.upem.net.tcp.chatfusion.Reader.Reader.ProcessStatus;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -13,8 +13,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +27,6 @@ public class ClientChat {
     private final Selector selector;
     private final InetSocketAddress serverAddress;
     private final String login;
-    private String nameServer;
     private final Thread console;
     private Context uniqueContext;
     private final Object lock = new Object();
@@ -37,7 +34,6 @@ public class ClientChat {
     private final ArrayDeque<Packet> queueOut = new ArrayDeque<>(CAPACITY);
 
     public ClientChat(String login, InetSocketAddress serverAddress) throws IOException {
-//        System.out.println("Constructor");
         this.serverAddress = serverAddress;
         this.login = login;
         this.sc = SocketChannel.open();
@@ -49,7 +45,6 @@ public class ClientChat {
      * Thread to read command on terminal
      */
     private void consoleRun() {
-//        System.out.println("consoleRun");
         try {
             try (var scanner = new Scanner(System.in)) {
                 while (scanner.hasNextLine()) {
@@ -65,11 +60,8 @@ public class ClientChat {
 
     /**
      * Send instructions to the selector via a BlockingQueue and wake it up
-     *
-     * @throws InterruptedException
      */
     private void sendCommand(String msg) throws InterruptedException {
-//        System.out.println("SendCommand");
         synchronized (console) {
             String[] cmd = msg.split(" ");
             switch (cmd[0]) {
@@ -83,11 +75,10 @@ public class ClientChat {
                 default -> {
                     while (queueOut.size() == CAPACITY) lock.wait();
                     // TODO - remove "ChatFusion", change by 'nameServer', that is initialize (and final..)
-                    var packet = new PacketString(4, List.of("ChatFusion", login, Arrays.toString(cmd)));
+                    var packet = new PacketString(4, List.of(uniqueContext.nameServer, login, Arrays.toString(cmd)));
                     queueOut.add(packet);
                     selector.wakeup();
                 }
-//                default -> System.out.println("Unknown command typed");
             }
         }
     }
@@ -96,7 +87,6 @@ public class ClientChat {
      * Processes the command from the BlockingQueue
      */
     private void processCommands() {
-//        System.out.println("processCommand");
         synchronized (lock) {
             if (queueOut.isEmpty()) return;
             var packet = (Packet) queueOut.pop();
@@ -106,7 +96,6 @@ public class ClientChat {
     }
 
     public void launch() throws IOException {
-//        System.out.println("launch");
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
         uniqueContext = new Context(key);
@@ -126,7 +115,6 @@ public class ClientChat {
     }
 
     private void treatKey(SelectionKey key) {
-//        System.out.println("treatKey");
         try {
             if (key.isValid() && key.isConnectable()) {
                 uniqueContext.doConnect();
@@ -138,13 +126,11 @@ public class ClientChat {
                 uniqueContext.doRead();
             }
         } catch (IOException ioe) {
-            // lambda call in select requires to tunnel IOException
             throw new UncheckedIOException(ioe);
         }
     }
 
     private void silentlyClose(SelectionKey key) {
-//        System.out.println("silentlyClose");
         Channel sc = key.channel();
         try {
             sc.close();
@@ -154,7 +140,6 @@ public class ClientChat {
     }
 
     public static void main(String[] args) throws NumberFormatException, IOException {
-//        System.out.println("main");
         if (args.length != 3) {
             usage();
             return;
@@ -177,13 +162,11 @@ public class ClientChat {
         private final PacketReader packetReader = new PacketReader();
         private final ArrayDeque<Packet> queue = new ArrayDeque<>();
         private boolean closed = false;
-        private final Charset cs = StandardCharsets.UTF_8;
-        private final MessageReader msgReader = new MessageReader();
         private ProcessStatus status;
         private Packet packet;
+        private String nameServer;
 
         private Context(SelectionKey key) {
-//            System.out.println("Context.constructor");
             this.key = key;
             this.sc = (SocketChannel) key.channel();
         }
@@ -195,21 +178,28 @@ public class ClientChat {
          * and after the call
          */
         private void processIn() {
-//            System.out.println("Context.processIn");
             for (; ; ) {
                 status = packetReader.process(bufferIn);
                 switch (status) {
                     case DONE -> {
                         packet = packetReader.get();
                         switch (packet.opCodeGet()) {
-                            // reponse from server - connection
                             case 2 -> {
+
+
                                 // TODO get the servername
+                                // TODO - FIX IN PROCESS
+                                nameServer = (String) packet.components().get(0);
+                                System.out.println("server name = " + nameServer);
+                                // TODO - FIX IN PROCESS
+
+
                                 packetReader.reset();
                                 logger.info("Client successfully connected to server");
                                 return;
                             }
-                            case 3 ->{
+                            case 3 -> {
+                                logger.info("Client couldn't connect to the server");
                                 packetReader.reset();
                                 silentlyClose();
                                 return;
@@ -248,7 +238,6 @@ public class ClientChat {
          * Add a message to the message queue, tries to fill bufferOut and updateInterestOps
          */
         private void queueMessage(Packet packet) {
-//            System.out.println("Context.queueMessage");
             queue.add(packet);
             processOut();
             updateInterestOps();
@@ -258,7 +247,6 @@ public class ClientChat {
          * Try to fill bufferOut from the message queue
          */
         private void processOut() {
-//            System.out.println("Context.processOut");
             var previewMsg = queue.peek();
             while (!queue.isEmpty() && bufferOut.remaining() >= previewMsg.size()) {// take the value without removing it from the queue
                 var fullMsg = queue.poll();
@@ -276,7 +264,6 @@ public class ClientChat {
          * been be called just before updateInterestOps.
          */
         private void updateInterestOps() {
-//            System.out.println("Context.updateInterestOps");
             int ops = 0;
 
             if (!closed && bufferIn.hasRemaining())
@@ -292,7 +279,6 @@ public class ClientChat {
         }
 
         private void silentlyClose() {
-//            System.out.println("Context.silentlyClose");
             try {
                 sc.close();
             } catch (IOException e) {
@@ -309,8 +295,7 @@ public class ClientChat {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doRead() throws IOException {
-//            System.out.println("Context.doRead");
-            if (sc.read(bufferIn) == -1) // read() returns -1 when connection closed
+            if (sc.read(bufferIn) == -1)
                 closed = true;
             processIn();
         }
@@ -324,7 +309,6 @@ public class ClientChat {
          * @throws IOException Is thrown if the SocketChannel <b>sc</b> is closed while reading from it
          */
         private void doWrite() throws IOException {
-//            System.out.println("Context.doWrite");
             sc.write(bufferOut.flip());
             bufferOut.compact();
             processOut();
@@ -332,7 +316,6 @@ public class ClientChat {
         }
 
         public void doConnect() throws IOException {
-//            System.out.println("Context.doConnect");
             if (!sc.finishConnect()) {
                 logger.warning("Bad thing happened");
                 return;
