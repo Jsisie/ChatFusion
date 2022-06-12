@@ -9,9 +9,9 @@ Implementation of a TCP network protocol on Java.
 
 ### jar
 
-We created 2 .jar, so that the user of our program could test it easily, without creating a client and a server directly from the code.
+We created 2 jar files, so that the user of our program could test it easily, without creating a client and a server directly from the code.
 
-The jar are present in the repository "out/artifacts".
+The jars are present in the repository "out/artifacts".
 
 The command to launch both of them are :
 
