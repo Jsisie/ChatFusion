@@ -52,8 +52,9 @@ public class PacketReader implements Reader<Packet> {
                 }
                 connectReader.reset();
             }
-            case 2 -> { status = stringReader.process(bb);
-                switch (status){
+            case 2 -> {
+                status = stringReader.process(bb);
+                switch (status) {
                     case DONE -> {
                         packet = new PacketString(2, List.of(stringReader.get()));
                         stringReader.reset();
@@ -70,7 +71,8 @@ public class PacketReader implements Reader<Packet> {
                 }
                 return ProcessStatus.DONE;
             }
-            case 3 -> {}
+            case 3 -> {
+            }
             case 4 -> {
                 status = publicMessageReader.process(bb);
                 switch (status) {

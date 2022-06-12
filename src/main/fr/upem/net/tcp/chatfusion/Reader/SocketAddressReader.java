@@ -7,6 +7,7 @@ import java.util.StringJoiner;
 
 public class SocketAddressReader implements Reader<SocketAddress> {
     private enum State {DONE, WAITING, ERROR}
+
     private int ipv;
     private StringJoiner sj = new StringJoiner(".");
     private int port;
@@ -28,8 +29,8 @@ public class SocketAddressReader implements Reader<SocketAddress> {
         }
         intReader.reset();
 
-        for(int i = 0; i < ipv; i++){
-            var b =  (bb.get() & 0xff) ;
+        for (int i = 0; i < ipv; i++) {
+            var b = (bb.get() & 0xff);
             sj.add(Integer.toString(b));
         }
         intState = intReader.process(bb);
@@ -55,6 +56,6 @@ public class SocketAddressReader implements Reader<SocketAddress> {
     @Override
     public void reset() {
         state = State.WAITING;
-        sj= new StringJoiner(".");
+        sj = new StringJoiner(".");
     }
 }

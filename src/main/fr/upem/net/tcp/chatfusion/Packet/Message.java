@@ -30,7 +30,7 @@ public record Message(String login, String message) implements Packet {
     }
 
     @Override
-    public List components() {
+    public List<?> components() {
         return null;
     }
 
@@ -38,7 +38,6 @@ public record Message(String login, String message) implements Packet {
     public ByteBuffer generateByteBuffer() {
         var bbLogin = cs.encode(login);
         var bbMessage = cs.encode(message);
-        // TODO - add opCode here (4)
         return ByteBuffer.allocate(size()).putInt(4).putInt(bbLogin.limit()).put(bbLogin).putInt(bbMessage.limit()).put(bbMessage);
     }
 }

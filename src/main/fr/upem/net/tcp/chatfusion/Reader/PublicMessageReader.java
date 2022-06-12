@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 public class PublicMessageReader implements Reader<PacketString> {
     private enum State {DONE, WAITING, ERROR}
+
     private PublicMessageReader.State state = PublicMessageReader.State.WAITING;
     private PacketString packet;
     private String server = "";

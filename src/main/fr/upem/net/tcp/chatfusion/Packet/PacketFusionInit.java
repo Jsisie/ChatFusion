@@ -1,7 +1,5 @@
 package fr.upem.net.tcp.chatfusion.Packet;
 
-import fr.upem.net.tcp.chatfusion.ClientChat;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -45,9 +43,9 @@ public record PacketFusionInit (int opCode, String name, SocketAddress sa, int n
         bb.put(bbName);
 
         var inetSA = (InetSocketAddress) sa;
-        var ipAdresse = inetSA.getHostName();
+        var ipAddress = inetSA.getHostName();
         try {
-            InetAddress ip = InetAddress.getByName(ipAdresse);
+            InetAddress ip = InetAddress.getByName(ipAddress);
             var bytes = ip.getAddress();
             for (byte b : bytes) {
                 bb.put(b);
@@ -55,11 +53,9 @@ public record PacketFusionInit (int opCode, String name, SocketAddress sa, int n
             bb.putInt(inetSA.getPort());
         }
         catch (IOException ioe){
-            logger.info("erreur du put socket adresse dans le buffer");
+            logger.info("Error from Socket Address in buffer");
         }
 
-
-        //bb.putInt(name.length());
         bb.putInt(nbMembers);
         for (var component : components) {
             var bbComponent = cs.encode(component);
