@@ -63,8 +63,7 @@ public class ClientChat {
      */
     private void sendCommand(String msg) throws InterruptedException {
         synchronized (console) {
-            String[] cmd = msg.split(" ");
-            if ("LOGIN".equals(cmd[0])) {
+            if ("LOGIN".equals(msg)) {
                 while (queueOut.size() == CAPACITY) lock.wait();
                 var packet = new PacketString(0, login);
                 queueOut.add(packet);
@@ -72,7 +71,7 @@ public class ClientChat {
             } else {
                 if (uniqueContext.nameServer != null) {
                     while (queueOut.size() == CAPACITY) lock.wait();
-                    var packet = new PacketString(4, List.of(uniqueContext.nameServer, login, Arrays.toString(cmd)));
+                    var packet = new PacketString(4, List.of(uniqueContext.nameServer, login, msg));
                     queueOut.add(packet);
                     selector.wakeup();
                 } else {
@@ -97,7 +96,6 @@ public class ClientChat {
     public void launch() throws IOException {
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
-        uniqueContext = new Context(key);
         uniqueContext = new Context(key);
         key.attach(uniqueContext);
         sc.connect(serverAddress);

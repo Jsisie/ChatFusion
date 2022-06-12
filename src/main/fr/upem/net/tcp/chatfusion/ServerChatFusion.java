@@ -161,22 +161,17 @@ public class ServerChatFusion {
      *
      * @param packet Message
      */
-    private void broadcast(Packet packet) {
-        var keys = selector.keys();
-        for (var key : keys) {
-            var attach = key.attachment();
-            if (attach == null) continue;
-            var context = (Context) attach;
-            context.queueMessage(packet);
-        }
-    }
-
     private void broadcastClient(Packet packet) {
         for (var value : connectedClients.values()) {
             value.queueMessage(packet);
         }
     }
 
+    /**
+     * Add a message to all connected server queue
+     *
+     * @param packet Message
+     */
     private void broadcastServer(Packet packet) {
         connectedServer.forEach((key, value) -> value.queueMessage(packet));
     }
@@ -374,12 +369,11 @@ public class ServerChatFusion {
         private void publicMessage() {
             var nameServer = packet.components().get(0);
             String login = (String) packet.components().get(1);
-            var message = packet.components().get(2);
+//            var message = packet.components().get(2);
 
-            Message msg = new Message(login, (String) message);
             if (nameServer.equals(name)) {
                 if (isConnect(login)) {
-                    broadcast(packet);
+                    broadcastClient(packet);
                 } else {
                     logger.warning("Client " + login + " isn't connected to the server");
                 }
@@ -509,4 +503,3 @@ public class ServerChatFusion {
         }
     }
 }
-
