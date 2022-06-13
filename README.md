@@ -5,9 +5,7 @@ by : Barroux Léo/Rieutord Robin
 Implementation of a TCP network protocol on Java.
 
 
-## Creating them
-
-### jar
+## Jar
 
 We created 2 jar files, so that the user of our program could test it easily, without creating a client and a server directly from the code.
 
@@ -24,9 +22,8 @@ Here's an example of how to use the jar :
 
 The server needs to be launched before the client.
 
-
-## Using them
-
+## Commands 
+  
 ### Client
 
 To connect to the server you chose with the ip address, in order to send message :
