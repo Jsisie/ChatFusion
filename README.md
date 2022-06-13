@@ -13,8 +13,8 @@ The jars are present in the repository "out/artifacts".
 
 The command to launch both of them are :
 
-java -jar ChatFusionServer.jar <port> <name>
-java -jar ChatFusionClient.jar <name> <ip address> <port>
+``  java -jar ChatFusionServer.jar <port> <name> ``
+``  java -jar ChatFusionClient.jar <name> <ip address> <port> ``
 
 Here's an example of how to use the jar :
 "java -jar ChatFusionServer.jar 7777 ChatFusion"
